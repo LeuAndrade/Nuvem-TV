@@ -1,8 +1,18 @@
-# BXbox Cloud TV — 0.2.0
+# BXbox Cloud TV — 0.3.0
 
 Cliente Android TV de Xbox Cloud Gaming, com interface Java Android própria. Requer Android 7.0/API 24 ou superior. Nome anterior: Nuvem TV. O applicationId, as preferências e a chave do cofre foram preservados para permitir atualizar o aplicativo e manter o login.
 
-## O que mudou nesta versão
+## Interface 0.3.0
+
+A interface foi redesenhada a partir da referência visual fornecida pelo usuário: menu lateral fixo, fundo escuro, acento verde, jogo em destaque no Início e cartões com capas. Biblioteca, pesquisa, histórico, favoritos, detalhes, configurações, ajuda e diálogos usam a mesma linguagem.
+
+- Client ID removido apenas da interface. O valor interno e o valor já salvo são preservados; Auth.java, Cloud.java e Vault.java não foram modificados.
+- A grade desenha um contorno verde acima do cartão que tem foco, sem depender do estado de seleção visual da célula reciclada.
+- Ordenação e gênero usam diálogos com opções focáveis. Ao fechar, o foco volta ao filtro; ↓ entra na grade, ↑ da primeira linha retorna ao filtro e ← da primeira coluna retorna ao menu lateral.
+- Configurações organizadas em Streaming, Conexão e Conta e aplicativo. Todas as opções anteriores foram preservadas, exceto o editor público de Client ID solicitado para remoção.
+- Capas de até 320×180; o destaque e os detalhes usam até 640×360 dentro do mesmo orçamento de cache. Não há carrossel automático, vídeo de fundo ou animações de escala.
+
+## Recursos anteriores preservados
 
 - Início em grade com capas e nomes dos jogos, em uma interface escura para controle remoto.
 - Busca por nome sem diferenciar acentos, ordenação A–Z/Z–A, filtro por gênero e aba Favoritos.
@@ -34,11 +44,11 @@ O perfil inicial continua Native / H264 / 720p / 5 Mb/s. Native permite somente 
 
 O refresh token fica cifrado no Android Keystore. No primeiro login, o app exibe um código para autorizar pelo celular. Nas aberturas seguintes, usa a credencial existente e renova os tokens silenciosamente. Se a Microsoft revogar a autorização, o app precisará de um novo login. Não é possível garantir uma sessão válida para sempre.
 
-O Client ID público padrão continua o da implementação de referência. Não é uma senha nem uma autorização própria do projeto; a aceitação depende da Microsoft. A opção avançada permite trocar o Client ID, o que desconecta a conta anterior.
+O Client ID continua no código de autenticação. Não é uma senha nem uma autorização própria do projeto; a aceitação depende da Microsoft. Ele não é exibido nem editável nas configurações. O identificador já usado pela sessão salva é mantido para não desconectar a conta por essa mudança de interface.
 
 ## Atualizar e compilar
 
-Guia: `docs/GUIA_GITHUB.md`. Validação: `docs/VALIDACAO.md`. Alterações: `docs/ALTERACOES_0.2.md`.
+Guia: `docs/GUIA_GITHUB.md`. Validação: `docs/VALIDACAO.md`. Alterações: `docs/ALTERACOES_0.3.md`.
 
 ```bash
 node tools/test-player.cjs
@@ -47,7 +57,7 @@ bash gradlew :app:testLiteUnitTest :app:lintLite :app:assembleLite
 
 JDK 17 e Android SDK 35. O teste de interface usa Robolectric e baixa dependências de teste na primeira execução; elas não entram no APK.
 
-APKs em `app/build/outputs/apk/lite/`, um para armeabi-v7a e outro para arm64-v8a. A versão entregue usa a mesma assinatura de desenvolvimento da entrega anterior. Ao gerar em outra máquina, uma assinatura diferente pode impedir atualização por cima. Não desinstale o app antigo se quiser preservar seus dados: configure a mesma chave de assinatura para suas próprias compilações.
+APKs em `app/build/outputs/apk/lite/`, um para armeabi-v7a e outro para arm64-v8a. O identificador Android e os dados de sessão foram preservados. Uma atualização por cima exige a mesma chave de assinatura do APK instalado. A assinatura de desenvolvimento desta geração não é necessariamente a mesma de APKs anteriores ou de APKs gerados no GitHub. Guarde sua chave de assinatura fora do repositório público. Se houver conflito de assinatura, desinstalar apaga login e preferências locais; gerar com a chave original é a forma de preservar esses dados.
 
 ## Limitações
 

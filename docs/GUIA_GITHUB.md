@@ -1,6 +1,6 @@
 # Atualizar a versão anterior sem criar outro repositório
 
-Se você já instalou o APK da entrega anterior, instale o novo APK de mesma arquitetura **por cima**, sem desinstalar. O nome muda para BXbox Cloud TV e a sessão cifrada existente é reaproveitada. A renovação ainda depende de a Microsoft aceitar sua credencial.
+Se você já instalou o APK da entrega anterior, instale o novo APK de mesma arquitetura **por cima**, sem desinstalar. O nome continua BXbox Cloud TV, e a sessão cifrada pode ser reaproveitada quando a assinatura da atualização for compatível. A renovação ainda depende de a Microsoft aceitar sua credencial.
 
 Se o Android informar conflito de assinatura, a versão instalada foi assinada com outra chave. Para manter os dados, gere a atualização usando a chave dessa instalação. Desinstalar apaga a sessão local.
 
@@ -14,7 +14,7 @@ Para atualizar seu repositório já criado:
 git pull --ff-only
 python3 instalar_projeto.py --sem-workflow --substituir
 git add .
-git commit -m "Atualiza para BXbox Cloud TV 0.2.0"
+git commit -m "Atualiza para BXbox Cloud TV 0.3.0"
 git push
 ```
 
@@ -22,7 +22,7 @@ git push
 5. O workflow anterior continua compilando o projeto. Para atualizar também seu nome, edite `.github/workflows/android.yml` pelo GitHub e cole `workflow-android.txt` desta entrega.
 6. Vá a Actions e baixe os APKs da execução verde.
 
-A navegação agora tem Início, Volte a jogar, Favoritos e Configurações. Escolha um jogo para ver Jogar/Voltar/Favoritar. A conta sai por Configurações > Sair da conta.
+A navegação lateral tem Início, Volte a jogar, Pesquisar, Configurações, Biblioteca, Favoritos e Ajuda. Escolha um jogo para ver Jogar/Voltar/Favoritar. A conta sai por Configurações > Sair da conta.
 
 ---
 
@@ -159,3 +159,12 @@ O atalho do site oficial foi removido. Nas configurações, WebView significa o 
 ## 12. Depois de terminar
 
 Volte à lista de Codespaces da sua conta e pare o ambiente para não deixá-lo consumindo cota. O código continua no repositório. Para gerar outro APK, use Actions > Run workflow; não precisa recriar tudo.
+
+
+## Navegação da versão 0.3
+
+A borda verde forte indica o foco real do controle; o fundo verde discreto no menu indica a tela aberta. Após escolher A–Z/Z–A ou um gênero, pressione ↓ para entrar nos cartões. Na primeira linha de jogos, ↑ volta ao filtro. Na primeira coluna, ← volta ao menu lateral.
+
+Em Configurações, Streaming reúne motor, resolução, bitrate, codec, baixa latência, estatísticas e perfil leve. Conexão reúne servidor e diagnóstico. Conta e aplicativo reúne login/saída e licenças. O Client ID permanece interno e não pode ser alterado pela interface.
+
+O destaque é estático e usa os metadados da biblioteca real; não exibe gamertag, plano, classificação etária ou popularidade inventados.

@@ -1,0 +1,27 @@
+<resources>
+ <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+  <item name="android:fontFamily">sans</item>
+  <item name="android:colorAccent">#9BFF24</item>
+  <item name="android:colorControlHighlight">#385E20</item>
+  <item name="android:windowBackground">#020F15</item>
+  <item name="android:buttonStyle">@style/TvButton</item>
+  <item name="android:alertDialogTheme">@style/TvDialog</item>
+  <item name="android:windowActionModeOverlay">true</item>
+ </style>
+ <style name="TvButton" parent="android:style/Widget.Material.Button">
+  <item name="android:gravity">center</item>
+  <item name="android:includeFontPadding">false</item>
+  <item name="android:focusable">true</item>
+  <item name="android:focusableInTouchMode">true</item>
+  <item name="android:background">@drawable/tv_control_background</item>
+  <item name="android:textColor">#F3F7FA</item>
+  <item name="android:textAllCaps">false</item>
+  <item name="android:minHeight">44dp</item>
+ </style>
+ <style name="TvDialog" parent="android:style/Theme.Material.Dialog.Alert">
+  <item name="android:colorAccent">#9BFF24</item>
+  <item name="android:colorControlHighlight">#385E20</item>
+  <item name="android:buttonStyle">@style/TvButton</item>
+  <item name="android:windowBackground">@drawable/tv_dialog_background</item>
+ </style>
+</resources>

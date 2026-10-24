@@ -19,9 +19,9 @@ public class LibraryUiTest {
     @Before public void open(){RuntimeEnvironment.getApplication().getSharedPreferences("vault",0).edit().clear().commit();RuntimeEnvironment.getApplication().getSharedPreferences("settings",0).edit().clear().commit();controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();}
     @After public void close(){controller.pause().stop().destroy();}
     void library(){activity.signedIn=true;activity.catalog=Json.arr(Json.obj("id","one","name","Uma aventura","cover","","publisher","Editora","genres",Json.arr("Ação")),Json.obj("id","two","name","Corrida","cover","","genres",Json.arr("Corrida")));activity.home();}
-    @Test public void cardOpensDetailsAndBackPreservesLibrary(){library();activity.details(activity.catalog.optJSONObject(0));assertEquals("detail",activity.screen);assertNotNull(find(activity.getWindow().getDecorView(),"▶  Jogar"));assertNotNull(find(activity.getWindow().getDecorView(),"Voltar ao início"));activity.onBackPressed();assertEquals("home",activity.screen);assertEquals(2,activity.grid.getAdapter().getCount());}
-    @Test public void favoritesAndFiltersAreAppliedToActualGrid(){library();activity.details(activity.catalog.optJSONObject(0));find(activity.getWindow().getDecorView(),"☆  Adicionar aos favoritos").performClick();activity.navigate("favorites");assertEquals(1,activity.grid.getAdapter().getCount());activity.navigate("home");activity.query="corrida";activity.renderGrid();assertEquals(1,activity.grid.getAdapter().getCount());}
-    @Test public void connectedAccountDoesNotDisplayLoginOrOfficialSite(){library();assertEquals("●  Conta conectada",activity.accountButton.getText().toString());assertNull(find(activity.getWindow().getDecorView(),"Xbox.com/play"));assertNull(find(activity.getWindow().getDecorView(),"Entrar na conta"));}
+    @Test public void cardOpensDetailsAndBackPreservesLibrary(){library();activity.details(activity.catalog.optJSONObject(0));assertEquals("detail",activity.screen);assertNotNull(find(activity.getWindow().getDecorView(),"Jogar"));assertNotNull(find(activity.getWindow().getDecorView(),"Voltar ao início"));activity.onBackPressed();assertEquals("home",activity.screen);assertEquals(2,activity.grid.getAdapter().getCount());}
+    @Test public void favoritesAndFiltersAreAppliedToActualGrid(){library();activity.details(activity.catalog.optJSONObject(0));find(activity.getWindow().getDecorView(),"Adicionar aos favoritos").performClick();activity.navigate("favorites");assertEquals(1,activity.grid.getAdapter().getCount());activity.navigate("home");activity.query="corrida";activity.renderGrid();assertEquals(1,activity.grid.getAdapter().getCount());}
+    @Test public void connectedAccountDoesNotDisplayLoginOrOfficialSite(){library();assertEquals("●  Conectado",activity.accountButton.getText().toString());assertNull(find(activity.getWindow().getDecorView(),"Xbox.com/play"));assertNull(find(activity.getWindow().getDecorView(),"Entrar na conta"));}
     @Test public void coverRequestsCanBeSuspendedWithoutStartingStreaming(){assertFalse(activity.images.isPaused());activity.images.pause();assertTrue(activity.images.isPaused());assertEquals(0,activity.images.memoryBytes());activity.images.resume();assertFalse(activity.images.isPaused());}
     @Test public void laysOutCatalogAndDetailsAtTvResolution() throws Exception {
         library();
@@ -40,6 +40,7 @@ public class LibraryUiTest {
         activity.details(activity.catalog.optJSONObject(0));
         snapshot("details.png");
         if(fixture!=null){Thread.sleep(100);org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();snapshot("details.png");}
+        activity.settings();snapshot("settings-stream.png");activity.settingsPage="network";activity.settings();snapshot("settings-network.png");activity.settingsPage="account";activity.settings();snapshot("settings-account.png");activity.help();snapshot("help.png");
     }
     void snapshot(String name) throws Exception {
         View root=activity.root;
@@ -50,9 +51,14 @@ public class LibraryUiTest {
         if(path==null)return;
         java.io.File dir=new java.io.File(path);dir.mkdirs();
         android.graphics.Bitmap image=android.graphics.Bitmap.createBitmap(1920,1080,android.graphics.Bitmap.Config.ARGB_8888);
+        invalidateTree(root);
+        root.getViewTreeObserver().dispatchOnPreDraw();
         root.draw(new android.graphics.Canvas(image));
+
+
         try(java.io.FileOutputStream output=new java.io.FileOutputStream(new java.io.File(dir,name))){image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,output);}
         image.recycle();
     }
+    void invalidateTree(View view){view.setLayerType(View.LAYER_TYPE_SOFTWARE,null);view.invalidate();if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++)invalidateTree(group.getChildAt(i));}}
     static TextView find(View view,String text){if(view instanceof TextView&&text.contentEquals(((TextView)view).getText()))return (TextView)view;if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++){TextView match=find(group.getChildAt(i),text);if(match!=null)return match;}}return null;}
 }

@@ -43,7 +43,13 @@ final class CoverLoader {
         memory.evictAll();
         main.removeCallbacksAndMessages(null);
     }
-    void bind(ImageView view, String url) {
+    void bind(ImageView view, String url) { bind(view,url,320,180); }
+    void bindHero(ImageView view,String original) {
+        String url=Catalog.coverUrl(original);
+        if(!url.isEmpty())url=url.replace("w=320&h=180", "w=640&h=360");
+        bind(view,url,640,360);
+    }
+    private void bind(ImageView view, String url,int width,int height) {
         view.setImageDrawable(null);
         view.setTag(url);
         if (paused || closed || url.isEmpty() || Catalog.coverUrl(url).isEmpty()) return;
@@ -60,7 +66,7 @@ final class CoverLoader {
                         File file = new File(directory, hash(url) + ".jpg");
                         if (!file.isFile()) download(url, file, token);
                         if (paused || closed || token != generation.get()) return;
-                        bitmap = decode(file);
+                        bitmap = decode(file,width,height);
                         if (bitmap == null) { file.delete(); return; }
                         synchronized (memory) {
                             if (paused || closed || token != generation.get()) return;
@@ -105,19 +111,19 @@ final class CoverLoader {
             connection.disconnect();
         }
     }
-    private Bitmap decode(File file) {
+    private Bitmap decode(File file,int width,int height) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(file.getAbsolutePath(), options);
         if (options.outWidth <= 0 || options.outHeight <= 0 || options.outWidth > 8192 || options.outHeight > 8192) return null;
         options.inSampleSize = 1;
-        while (options.outWidth / options.inSampleSize > 640 || options.outHeight / options.inSampleSize > 360)
+        while (options.outWidth / options.inSampleSize > width*2 || options.outHeight / options.inSampleSize > height*2)
             options.inSampleSize *= 2;
         options.inJustDecodeBounds = false;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
         Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath(), options);
-        if (bitmap != null && (bitmap.getWidth() > 320 || bitmap.getHeight() > 180)) {
-            float ratio = Math.min(320f / bitmap.getWidth(), 180f / bitmap.getHeight());
+        if (bitmap != null && (bitmap.getWidth() > width || bitmap.getHeight() > height)) {
+            float ratio = Math.min((float)width / bitmap.getWidth(), (float)height / bitmap.getHeight());
             Bitmap resized = Bitmap.createScaledBitmap(bitmap, Math.max(1, Math.round(bitmap.getWidth() * ratio)),
                     Math.max(1, Math.round(bitmap.getHeight() * ratio)), true);
             if (bitmap != resized) bitmap.recycle();
