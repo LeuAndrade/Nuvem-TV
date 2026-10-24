@@ -1,0 +1,48 @@
+name: Gerar APK Nuvem TV
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Instalar SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Verificar protocolo WebView
+        run: node tools/test-player.cjs
+      - name: Testar, verificar e compilar
+        run: bash gradlew :app:testLiteUnitTest :app:lintLite :app:assembleLite --no-daemon
+      - name: Incluir o código correspondente
+        run: git archive --format=zip --output=fonte-correspondente.zip HEAD
+      - name: Disponibilizar APKs e código
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuvemTV-APKs-e-codigo
+          path: |
+            app/build/outputs/apk/lite/*.apk
+            fonte-correspondente.zip
+          if-no-files-found: error
+          retention-days: 30
+      - name: Disponibilizar relatórios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuvemTV-verificacoes
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore
