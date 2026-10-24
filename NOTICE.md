@@ -1,4 +1,4 @@
-# Nuvem TV — créditos e licença
+# BXbox Cloud TV — créditos e licença
 
 Projeto Android próprio, iniciado em uma árvore nova, sem histórico Git ou interface React Native do XStreaming. Ele contém adaptações de protocolo; não é uma implementação inteiramente independente dos projetos abaixo.
 
@@ -18,6 +18,6 @@ Projeto Android próprio, iniciado em uma árvore nova, sem histórico Git ou in
 - Gradle Wrapper gerado com Gradle 8.9, Apache-2.0: https://github.com/gradle/gradle/blob/v8.9.0/LICENSE.
 - Cópias das licenças principais estão em third_party/ e nos assets do aplicativo.
 
-Microsoft, Xbox e nomes de jogos são marcas de seus titulares. Nuvem TV é um cliente experimental independente, sem afiliação.
+Microsoft, Xbox e nomes de jogos são marcas de seus titulares. BXbox Cloud TV é um cliente experimental independente, sem afiliação.
 
 Distribua o código correspondente junto ao APK e preserve créditos e licença AGPL-3.0. O workflow inclui automaticamente o código da mesma revisão. Não coloque senhas, tokens pessoais ou chaves de assinatura no repositório.

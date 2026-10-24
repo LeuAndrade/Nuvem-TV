@@ -1,58 +1,58 @@
-# Nuvem TV
+# BXbox Cloud TV — 0.2.0
 
-Cliente experimental de Xbox Cloud Gaming para Android TV, Android 7.0/API 24 ou superior. Interface Java Android enxuta, com navegação pelo controle remoto, sem React Native, imagens de catálogo, anúncios próprios ou serviços em segundo plano.
+Cliente Android TV de Xbox Cloud Gaming, com interface Java Android própria. Requer Android 7.0/API 24 ou superior. Nome anterior: Nuvem TV. O applicationId, as preferências e a chave do cofre foram preservados para permitir atualizar o aplicativo e manter o login.
 
-**Não foi validado com uma sessão autenticada Xbox nem em TV de 1 GB. Compilar não prova que o login, o protocolo ou o desempenho funcionarão no seu aparelho.** Consulte `docs/VALIDACAO.md` para o que foi testado.
+## O que mudou nesta versão
 
-## Funções implementadas
+- Início em grade com capas e nomes dos jogos, em uma interface escura para controle remoto.
+- Busca por nome sem diferenciar acentos, ordenação A–Z/Z–A, filtro por gênero e aba Favoritos.
+- Volte a jogar mantém a ordem recente retornada pelo serviço, com opção de ordenar por nome.
+- Detalhes com capa, nome, categorias e editora, além de Jogar, Voltar ao início e Adicionar/remover favorito.
+- Restauração automática da sessão salva na abertura, renovação silenciosa de tokens e atualização do catálogo.
+- Não abre outro login se uma credencial já está salva. Falhas temporárias de rede preservam a conta; uma revogação confirmada de refresh token desconecta a sessão.
+- Configurações com Sair da conta. A ação remove a credencial, a biblioteca e os favoritos locais dessa conta.
+- Removido o botão e todo o caminho do site Xbox.com/play. O player WebView local continua disponível nas configurações.
+- Ícone, banner e nome de exibição atualizados para BXbox Cloud TV.
 
-- Todos os jogos: união dos títulos retornados pela conta e de listas públicas Microsoft, com pesquisa e páginas de 40 itens; disponibilidade real depende da região, plano e propriedade de cada jogo.
-- Volte a jogar: histórico retornado por `/v2/titles/mru`. Abrir inicia uma sessão; o progresso depende dos saves do serviço, não de uma captura local.
-- Login Microsoft por código de dispositivo e armazenamento do refresh token cifrado no Android Keystore; logout remove a credencial e os cookies locais.
-- Native: WebRTC nativo, SurfaceView/EGL, decodificador MediaCodec de hardware, sem fallback para software.
-- WebView: player WebRTC local próprio usando a pilha WebRTC do Android System WebView; o sistema decide a implementação de decoder.
-- Atalho adicional para `https://www.xbox.com/pt-BR/play`. Nesse atalho, os ajustes do nosso player não controlam o site oficial.
-- Ajustes: motor, estatísticas, 720p/1080p, pedido de limite de 3–15 Mb/s, região retornada pela conta, codec e solicitação de baixa latência.
-- Codecs oferecidos na tela: H264, VP8, VP9, H265 e AV1. O motor Native falha explicitamente se não houver hardware WebRTC compatível; o servidor pode rejeitar codecs mesmo quando há hardware.
-- Controle físico: botões, dois analógicos, gatilhos e D-pad. Sem controle virtual, microfone, chat, vibração ou interfaces sociais do Xbox nesta versão.
+## Otimização da biblioteca
 
-## Perfil inicial
+A grade usa GridView nativo com reciclagem de células e páginas de até 60 títulos. Só as capas requisitadas por células visíveis entram no carregador. Miniaturas de até 320×180 pixels, no máximo duas transferências simultâneas, fila limitada a 20 tarefas, cache de bitmaps de 3 MiB e cache de arquivos de 20 MiB. Uma capa indisponível mantém o nome e o acesso ao jogo.
 
-Native / H264 / 720p / 5 Mb/s / estatísticas desligadas. Para medir, ative estatísticas por alguns minutos. Baixe para 3 Mb/s se necessário, sabendo que a imagem perde qualidade e isso não garante menor custo de decode. Evite 1080p no primeiro teste.
+O catálogo salva somente metadados, limitados a 3 MiB, para reabrir a biblioteca rapidamente. A busca espera 160 ms após a digitação para evitar reconstruções excessivas.
 
-A solicitação de baixa latência usa `MediaFormat.KEY_LOW_LATENCY` somente no Android 11+ e apenas quando o decoder anuncia suporte. Nenhuma propriedade privada de fabricante é forçada. Há opção de desligar para diagnosticar drivers defeituosos.
+Ao iniciar uma partida, o carregador de capas é suspenso, as conexões de imagem são desconectadas, a fila é descartada, o cache de bitmaps é esvaziado e as referências à grade são liberadas. Não há animação de fundo, vídeo de destaque, carrossel automático ou pré-carregamento do catálogo inteiro em bitmaps.
 
-O bitrate é solicitado por SDP (`b=AS` e `b=TIAS`); não é um limitador rígido. A resolução é solicitada no perfil de sessão e na mensagem de dimensões; não se reduz a imagem recebida apenas redimensionando a tela. O servidor pode entregar outro fluxo. O aplicativo não consegue criar suporte de hardware que o aparelho não possui.
+## Streaming preservado
 
-## Gerar o APK
+NativePlayer.java, WebPlayer.java, Wire.java, Pad.java, LowLatencyDecoderFactory.java e assets/player.js permanecem idênticos à versão 0.1.0 que precedeu este ajuste de interface.
 
-Passo a passo para iniciantes: `docs/GUIA_GITHUB.md`.
+Continuam disponíveis: Native/WebView, estatísticas opcionais, resolução de 720p/1080p, pedido de bitrate entre 3 e 15 Mb/s, regiões disponíveis na conta, seleção de codec e solicitação de baixa latência quando suportada.
 
-Em um ambiente com JDK 17 e Android SDK 35:
+O perfil inicial continua Native / H264 / 720p / 5 Mb/s. Native permite somente decoder por hardware. O servidor pode não aceitar o codec, a resolução ou o bitrate pedidos. Baixa latência depende do hardware, driver e Android 11+. Não há promessa de melhora em qualquer aparelho de 1 GB.
+
+## Login
+
+O refresh token fica cifrado no Android Keystore. No primeiro login, o app exibe um código para autorizar pelo celular. Nas aberturas seguintes, usa a credencial existente e renova os tokens silenciosamente. Se a Microsoft revogar a autorização, o app precisará de um novo login. Não é possível garantir uma sessão válida para sempre.
+
+O Client ID público padrão continua o da implementação de referência. Não é uma senha nem uma autorização própria do projeto; a aceitação depende da Microsoft. A opção avançada permite trocar o Client ID, o que desconecta a conta anterior.
+
+## Atualizar e compilar
+
+Guia: `docs/GUIA_GITHUB.md`. Validação: `docs/VALIDACAO.md`. Alterações: `docs/ALTERACOES_0.2.md`.
 
 ```bash
 node tools/test-player.cjs
 bash gradlew :app:testLiteUnitTest :app:lintLite :app:assembleLite
 ```
 
-Saídas em `app/build/outputs/apk/lite/`. Há um APK para `armeabi-v7a` e outro para `arm64-v8a`. A ABI do sistema Android importa mais que o anúncio do processador.
+JDK 17 e Android SDK 35. O teste de interface usa Robolectric e baixa dependências de teste na primeira execução; elas não entram no APK.
 
-A variante `lite` usa R8 e remove recursos não usados; não é depurável. Está assinada com uma chave de desenvolvimento para instalação de teste. Uma nova máquina de CI pode gerar outra chave: nesse caso é preciso desinstalar a versão antiga ou configurar uma assinatura permanente antes de distribuir. Desinstalar apaga login e preferências locais. Não publique essa variante como produto final em uma loja.
+APKs em `app/build/outputs/apk/lite/`, um para armeabi-v7a e outro para arm64-v8a. A versão entregue usa a mesma assinatura de desenvolvimento da entrega anterior. Ao gerar em outra máquina, uma assinatura diferente pode impedir atualização por cima. Não desinstale o app antigo se quiser preservar seus dados: configure a mesma chave de assinatura para suas próprias compilações.
 
-## Estrutura
+## Limitações
 
-- MainActivity: interface, configurações, ciclo de vida e seleção de motor.
-- Auth / Vault / Net: autenticação, armazenamento cifrado e HTTPS.
-- Cloud: catálogo, sessão, SDP, ICE, keepalive e encerramento.
-- NativePlayer / org.webrtc.LowLatencyDecoderFactory: WebRTC e decoder de hardware.
-- WebPlayer / assets/player.js: player WebView e ponte restrita a operações de sessão.
-- Wire / Pad: pacote binário e controles físicos.
-- .github/workflows/android.yml: testes, análise estática e compilação no GitHub.
+Interfaces não públicas de Xbox podem mudar. Catálogo, histórico, entitlement e fila dependem da conta, plano, compras e região. O feedback de que o streaming anterior funciona veio do usuário; não é uma medição de laboratório deste projeto. A nova navegação foi verificada por compilação, testes e renderização de interface, sem um teste de desempenho numa TV física.
 
-## Segurança e limitações
+Sem microfone, controle virtual, chat ou vibração nesta versão. Não há site oficial embutido.
 
-A implementação usa interfaces não públicas do Xbox Cloud Gaming e pode precisar de manutenção se a Microsoft mudá-las. Login por código usa o Client ID público presente na referência XStreaming; ele pode deixar de ser aceito ou exigir permissões que um novo registro não possui. Para distribuição própria, obtenha um registro e autorização apropriados. Trocar apenas o Client ID não garante acesso Xbox.
-
-Sem senha no APK, sem backend de terceiros e sem credenciais no código. Tokens ficam fora do Git. Fluxos de conta infantil, MFA, restrições regionais, planos e jogos comprados dependem da Microsoft. Não há garantia de catálogo universal, de sessão bem-sucedida ou de ausência de bugs.
-
-Licença AGPL-3.0; leia `LICENSE` e `NOTICE.md`.
+Licença AGPL-3.0. Preserve `LICENSE`, `NOTICE.md` e o código correspondente ao compartilhar APKs. Projeto independente, sem afiliação com Microsoft ou Xbox.

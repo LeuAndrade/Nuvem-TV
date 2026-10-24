@@ -17,7 +17,7 @@ final class Cloud {
    for(int i=offset;i<Math.min(offset+40,titles.length());i++){JSONObject t=titles.getJSONObject(i);String id=t.optJSONObject("details")==null?t.optString("productId"):t.getJSONObject("details").optString("productId");if(!id.isEmpty()){ids.put(id);map.put(id,t);}}
    if(ids.length()==0)continue;
    JSONObject products=Net.json("POST","https://catalog.gamepass.com/v3/products?market=BR&language=pt-BR&hydration=RemoteLowJade0",null,Json.obj("Products",ids)).getJSONObject("Products");
-   for(int productIndex=0;productIndex<ids.length();productIndex++){String id=ids.getString(productIndex);JSONObject p=products.optJSONObject(id);if(p==null)continue;JSONObject t=map.get(id);if(t==null)continue;String title=t.optString("titleId");if(title.isEmpty())title=p.optString("XCloudTitleId");if(!title.isEmpty())result.put(Json.obj("id",title,"productId",id,"name",p.optString("ProductTitle",id)));}
+   for(int productIndex=0;productIndex<ids.length();productIndex++){String id=ids.getString(productIndex);JSONObject p=products.optJSONObject(id);if(p==null)continue;JSONObject t=map.get(id);if(t==null)continue;String title=t.optString("titleId");if(title.isEmpty())title=p.isNull("XCloudTitleId")?"":p.optString("XCloudTitleId");if(!title.isEmpty())result.put(Catalog.product(p,id,title));}
   }return result;
  }
  JSONObject call(String method,String resource,JSONObject body)throws Exception{if(stopped)throw new Exception("Sessão encerrada");auth.ensure();String url=session+(resource.isEmpty()?"":"/"+resource);String raw=Net.request(method,url,auth.gs,body==null?null:body.toString(),"application/json",null);return raw.trim().isEmpty()?new JSONObject():Json.parse(raw);}
