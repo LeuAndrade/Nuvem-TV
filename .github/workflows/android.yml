@@ -1,4 +1,4 @@
-name: Gerar APK Nuvem TV
+name: Gerar APK BXbox Cloud TV
 on:
   push:
     branches: [main]
@@ -31,7 +31,7 @@ jobs:
       - name: Disponibilizar APKs e código
         uses: actions/upload-artifact@v4
         with:
-          name: NuvemTV-APKs-e-codigo
+          name: BXboxCloudTV-APKs-e-codigo
           path: |
             app/build/outputs/apk/lite/*.apk
             fonte-correspondente.zip
@@ -41,7 +41,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: NuvemTV-verificacoes
+          name: BXboxCloudTV-verificacoes
           path: |
             app/build/reports/
             app/build/test-results/
