@@ -1,0 +1,17 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'br.com.nuvemtv'
+ compileSdk 35
+ defaultConfig { applicationId 'br.com.nuvemtv'; minSdk 24; targetSdk 35; versionCode 1; versionName '0.1.0-experimental' }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+ buildTypes {
+  lite { minifyEnabled true; shrinkResources true; signingConfig signingConfigs.debug; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
+  release { minifyEnabled true; shrinkResources true; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
+ }
+ splits { abi { enable true; reset(); include 'armeabi-v7a','arm64-v8a'; universalApk false } }
+ lint { abortOnError true }
+}
+dependencies {
+ implementation 'io.github.webrtc-sdk:android:125.6422.07'
+ testImplementation 'junit:junit:4.13.2'
+}
