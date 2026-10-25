@@ -1,0 +1,8 @@
+package br.com.nuvemtv;
+import java.util.*;import org.webrtc.*;import org.junit.*;import static org.junit.Assert.*;
+public class StatsPingTest {
+ RTCStats stat(String id,String type,Object... data){Map<String,Object> m=new HashMap<>();for(int i=0;i<data.length;i+=2)m.put((String)data[i],data[i+1]);return new RTCStats(1000,type,id,m);}
+ @Test public void selectedPairWinsOverOldNominatedPair(){Map<String,RTCStats> m=new LinkedHashMap<>();m.put("old",stat("old","candidate-pair","nominated",true,"state","succeeded","currentRoundTripTime",9));m.put("transport",stat("transport","transport","selectedCandidatePairId","live"));m.put("live",stat("live","candidate-pair","currentRoundTripTime",.037));assertEquals("37",StatsPing.label(m));}
+ @Test public void unavailableAndInvalidDoNotBecomeZero(){Map<String,RTCStats> m=new HashMap<>();assertEquals("—",StatsPing.label(m));m.put("p",stat("p","candidate-pair","selected",true,"currentRoundTripTime",Double.NaN));assertEquals("—",StatsPing.label(m));m.put("p",stat("p","candidate-pair","selected",true,"currentRoundTripTime",0));assertEquals("0",StatsPing.label(m));}
+ @Test public void usesVideoTransportInsteadOfUnrelatedTransport(){Map<String,RTCStats> m=new LinkedHashMap<>();m.put("t1",stat("t1","transport","selectedCandidatePairId","p1"));m.put("p1",stat("p1","candidate-pair","currentRoundTripTime",.300));m.put("v",stat("v","inbound-rtp","kind","video","transportId","t2"));m.put("t2",stat("t2","transport","selectedCandidatePairId","p2"));m.put("p2",stat("p2","candidate-pair","currentRoundTripTime",.020));assertEquals("20",StatsPing.label(m));}
+}

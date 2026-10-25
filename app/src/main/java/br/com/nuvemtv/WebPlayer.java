@@ -1,7 +1,7 @@
 package br.com.nuvemtv;
 import android.annotation.SuppressLint;import android.webkit.*;import android.os.*;import android.content.*;import org.json.*;import java.util.concurrent.*;
 final class WebPlayer {
- final WebView view;final Cloud cloud;final Pad pad;final NativePlayer.Ui ui;final Handler main=new Handler(Looper.getMainLooper());final ExecutorService worker=Executors.newSingleThreadExecutor();volatile boolean closed;final boolean microphone;String lastPad="";
+ final WebView view;final Cloud cloud;final Pad pad;final NativePlayer.Ui ui;final Handler main=new Handler(Looper.getMainLooper());final ExecutorService worker=Executors.newSingleThreadExecutor();volatile boolean closed;final boolean microphone;int lastButtons=Integer.MIN_VALUE;final float[] lastAxes=new float[6];
  @SuppressLint({"SetJavaScriptEnabled","AddJavascriptInterface"}) WebPlayer(Context c,Cloud cloud,Pad pad,int height,int kbps,String codec,boolean stats,boolean microphone,String title,NativePlayer.Ui ui){this.cloud=cloud;this.microphone=microphone;this.pad=pad;this.ui=ui;view=new WebView(c);WebSettings s=view.getSettings();s.setJavaScriptEnabled(true);s.setMediaPlaybackRequiresUserGesture(false);s.setAllowFileAccess(false);s.setAllowContentAccess(false);s.setDomStorageEnabled(false);s.setCacheMode(WebSettings.LOAD_NO_CACHE);s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
   view.setWebChromeClient(new WebChromeClient(){@Override public void onPermissionRequest(PermissionRequest request){
    if(!closed&&microphone&&c.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)==android.content.pm.PackageManager.PERMISSION_GRANTED&&"https://appassets.androidplatform.net".equals(request.getOrigin().toString().replaceAll("/+$",""))&&java.util.Arrays.asList(request.getResources()).contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE))request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});else request.deny();
@@ -10,11 +10,13 @@ final class WebPlayer {
    @Override public void onPageFinished(WebView v,String url){if(!closed)v.evaluateJavascript("boot("+Json.obj("height",height,"kbps",kbps,"codec",codec,"stats",stats,"microphone",microphone,"voiceStats",c.getSharedPreferences("settings",0).getBoolean("voiceStats",false),"title",title)+")",null);}
   });view.loadUrl("https://appassets.androidplatform.net/player.html");main.post(pads);
  }
- final Runnable pads=new Runnable(){public void run(){if(closed)return;String state=Json.obj("buttons",pad.buttons,"axes",Json.arr(pad.axes[0],pad.axes[1],pad.axes[2],pad.axes[3],pad.axes[4],pad.axes[5])).toString();if(!state.equals(lastPad)){lastPad=state;view.evaluateJavascript("window.pad="+state,null);}main.postDelayed(this,20);}};
+ boolean padChanged(){boolean changed=pad.buttons!=lastButtons;for(int i=0;i<6;i++)if(Float.compare(lastAxes[i],pad.axes[i])!=0)changed=true;return changed;}
+ final Runnable pads=new Runnable(){public void run(){if(closed)return;if(padChanged()){lastButtons=pad.buttons;System.arraycopy(pad.axes,0,lastAxes,0,6);String state=Json.obj("buttons",lastButtons,"axes",Json.arr(lastAxes[0],lastAxes[1],lastAxes[2],lastAxes[3],lastAxes[4],lastAxes[5])).toString();view.evaluateJavascript("window.pad="+state,null);}main.postDelayed(this,20);}};
  final class Bridge {
   @JavascriptInterface public void call(String id,String action,String payload){if(closed)return;worker.execute(()->{try{JSONObject p=Json.parse(payload);Object out;switch(action){case "start":cloud.start(p.getString("title"),p.getInt("height"),ui::status);out=Json.obj("pulse",cloud.pulse);break;case "offer":out=cloud.offer(p.getString("sdp"),microphone);break;case "chatOffer":out=cloud.chatOffer(p.getString("sdp"));break;case "ice":out=cloud.ice(p.getJSONArray("candidates"));break;case "keepalive":out=cloud.call("POST","keepalive",new JSONObject());break;default:throw new Exception("Operação inválida");}reply(id,out,null);}catch(Exception e){reply(id,null,e.getMessage());}});}
   @JavascriptInterface public void status(String s){if(!closed)ui.status(s);}
   @JavascriptInterface public void voice(String s){if(!closed)ui.voice(s);}
+  @JavascriptInterface public void quality(int width,int height){if(!closed&&width>0&&height>0&&width<=8192&&height<=8192)ui.quality(width,height);}
   @JavascriptInterface public void stats(String s){if(!closed)ui.stats(s);}
   @JavascriptInterface public void connected(){if(!closed)ui.connected();}
   @JavascriptInterface public void error(String s){if(!closed)ui.error(new Exception(s));}

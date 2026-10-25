@@ -1,25 +1,25 @@
-# Validação — BXbox Cloud TV 0.6.0
+# Validação — BXbox Cloud TV 0.7.0
 
-## Verificado no ambiente de desenvolvimento
+## Testes locais
 
-- Gradle :app:testLiteUnitTest :app:lintLite :app:assembleLite: BUILD SUCCESSFUL, Java 17, SDK/build-tools 35, Gradle 8.9.
-- 70 testes Java/Robolectric: zero falhas, zero erros, zero ignorados. Incluem regressões anteriores de login/layout/foco/catálogo/compras/idioma e novos casos de pesquisa com fallback 400, não mascarar 403, codificação de gamertag, URLs de avatares, fotos na lista/perfil e orçamento de imagem 96×96.
-- SocialIntegrationTest verifica painel interno sem Intent externo, mesma instância entre telas e ao abrir o jogo, restrição de navegação/origem de captura, opção de informações de voz desligada por padrão, habilitação após permissão, atributos de áudio de mídia sem mudar volume e isolamento dos botões do controle enquanto o social está expandido. Não acessa uma conta real nem estabelece um grupo remoto.
-- Testes de transporte social validam método, URL, corpo e tratamento de falhas usando respostas simuladas. Não comprovam mensagem recebida, convite enviado ou bloqueio de uma conta real.
-- node tools/test-player.cjs: passou. SDP/ICE, controle, áudio remoto separado do vídeo e habilitado, faixas simultâneas preservadas, recvonly sem microfone, sendrecv/captura quando ativado, renegociação, voiceStats opcional sem coleta por padrão, negação de permissão e liberação das faixas inclusive em captura assíncrona pendente. PeerConnection/servidor simulados.
-- Android Lint: zero erros/fatais, 18 avisos remanescentes de estilo, localização, compatibilidade e ícone. Não significa ausência absoluta de bugs.
-- Interface nativa renderizada nos testes a 1920×1080 com fixture pública de catálogo. A fixture é somente de desenvolvimento e não entra no APK. Não houve teste de TV física.
-- Wire.java, Pad.java e LowLatencyDecoderFactory.java comparados à versão 0.5, sem alteração. Dependências de runtime preservadas. Decodificação nativa continua restrita a hardware.
-- APKs ARM32 e ARM64 compilados e verificados com apksigner. Manifesto br.com.nuvemtv, versionName 0.6.0, versionCode 6, nome BXbox Cloud TV.
-- Certificado local SHA-256 a1461b49275b49e7e55637318e52442f8ed7aad1b105d91cf55480cd11f584f0, igual aos APKs locais 0.5/0.4/0.3. Um APK gerado no GitHub pode ter outra chave.
-- Instalador verificado em diretório vazio e em atualização preservando workflow existente. Arquivos extraídos comparados com o projeto empacotado. Nenhuma chave privada incluída.
+- Gradle :app:testLiteUnitTest :app:lintLite :app:assembleLite: BUILD SUCCESSFUL. Java 17, Android SDK/build-tools 35, Gradle 8.9.
+- 88 testes Java/Robolectric: zero falhas, zero erros, zero ignorados. Regressões anteriores de autenticação, foco, biblioteca, catálogo, compras, idiomas, imagens e protocolo preservadas.
+- Novos testes cobrem relacionamento na raiz/detail, direção de seguir, confirmação apenas após resposta aceita, rótulos no perfil, limpeza/reconciliação, texto em contentPayload.content.parts, remetentes e ordem, exclusão, envio aceito mantido durante consistência eventual, deduplicação, cursor e limite de histórico. Integração Android usa transporte simulado para enviar pedido/seguir/mensagem e conferir atualização da interface; não contata pessoas reais.
+- Navegação social: ausência de atalho flutuante, um só botão de perfil oficial, Voltar focando barra e segundo Voltar saindo, página sem captura destruída ao recolher, retenção da mesma página com reserva do microfone e isolamento dos botões do jogo quando expandida.
+- Ping: seleção do par ICE pelo transporte do vídeo, prioridade sobre pares antigos, RTT convertido em ms, NaN/ausência apresentados como —, zero real preservado.
+- Qualidade: dispositivo de 1280×720/1920×1080 conforme a seleção, seleção inválida recusada. Teste WebView de controle parado/mudando comprova evitar novas serializações/injeções sem mudança; não é benchmark de FPS.
+- node tools/test-player.cjs: passou. SDP/ICE/bitrate, mensagens de dimensões 720p/1080p, pacotes do controle, áudio remoto não mudo separado do vídeo, nenhuma repetição de play() em mídia já ativa, faixas simultâneas, microfone/renegociação/negação/liberação, coleta única opcional, RTT e eventos de dimensões recebidas. PeerConnection/servidor e elementos de mídia simulados.
+- Android Lint: zero erros/fatais; 18 avisos remanescentes de estilo/localização/compatibilidade/ícone. Isso não significa ausência absoluta de bugs.
+- Wire.java, Pad.java e LowLatencyDecoderFactory.java comparados à 0.6 sem alteração. Decoder Native continua por hardware, sem nova dependência de runtime.
+- APKs ARM32/ARM64 verificados com apksigner; br.com.nuvemtv, 0.7.0, versionCode 7, BXbox Cloud TV. Certificado local SHA-256 a1461b49275b49e7e55637318e52442f8ed7aad1b105d91cf55480cd11f584f0 igual aos APKs locais 0.6/0.5/0.4/0.3.
+- Instalador testado do zero e em atualização preservando workflow, fontes/arquivos/APKs comparados e checksums conferidos. Nenhuma chave privada no pacote.
 
-## O que ainda exige teste real
+## Limites de verificação
 
-Não houve TV, microfone físico, conta Xbox autenticada nem interlocutor. As correções de áudio tratam diferenças concretas de configuração e reprodução, mas não comprovam som audível no seu aparelho ou voz recebida por outra pessoa. Os testes não certificam as operações sociais autenticadas, consulta de compras ou continuidade de grupo recolhido.
+Não houve TV, conta Xbox autenticada, microfone físico ou interlocutor. Não foi medido FPS, latência, uso de RAM ou nitidez no aparelho real. As otimizações eliminam trabalho identificável no código, mas não comprovam que toda regressão de streaming foi resolvida. O serviço social original com voz continua custando memória/CPU quando necessário.
 
-Grupos/convites/bloqueio usam a página original Xbox incorporada em WebView; não há novo cliente nativo de Party. As ações dependem do serviço, conta, privacidade, compatibilidade e versão do WebView. O login oficial pode ser pedido uma primeira vez separadamente. A concessão de microfone não prova conexão com um grupo. Fechar social ou colocar o app em segundo plano encerra a página/captura. WebViews podem restringir reprodução de páginas ocultas; confirme a continuidade após recolher.
+As respostas e notificações autenticadas, histórico real, amizade/mensagem recebida e grupo precisam de teste com a conta. APIs podem negar operações por privacidade/autorização e mudar formato. A interface não apresenta uma falha como envio feito. Grupos continuam no serviço oficial incorporado ao app, sem novo protocolo nativo de Party. A continuidade de página recolhida depende do WebView. Fechar social/segundo plano encerra a página/captura.
 
-Não houve medição de RAM, latência ou FPS em aparelho de 1 GB. O caminho de vídeo foi preservado e a área social é criada somente ao abrir, mas a página oficial e a voz ativa aumentam o consumo. Resolução, codec, bitrate e baixa latência continuam sujeitos ao servidor/hardware.
+720p/1080p são pedidos sem redução automática local. A dimensão recebida é observada no decoder/elemento de vídeo, não inferida do tamanho da tela. O servidor/rede pode adaptar bitrate, compressão e resolução. A verificação não garante Full HD constante, detalhe perceptual equivalente, HDR nem ausência de artefatos. Ping ICE mede ida/volta da rede, não toda a latência de controle/decoder/tela.
 
-Consulte ALTERACOES_0.6.md e GUIA_GITHUB.md para uso e limitações.
+GUIA_GITHUB.md explica atualização no mesmo repositório, uso do controle e comparação de qualidade; ALTERACOES_0.7.md documenta implementação e referências.

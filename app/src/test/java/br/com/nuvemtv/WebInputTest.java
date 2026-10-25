@@ -1,0 +1,6 @@
+package br.com.nuvemtv;
+import org.junit.*;import org.junit.runner.RunWith;import org.robolectric.*;import org.robolectric.annotation.*;import android.os.*;import static org.junit.Assert.*;
+@RunWith(RobolectricTestRunner.class) @Config(sdk=28)
+public class WebInputTest {
+ @Test public void idleInputDoesNotBuildOrSubmitAnotherJavascriptState()throws Exception{android.content.Context c=RuntimeEnvironment.getApplication();Auth auth=new Auth(c,Auth.DEFAULT_CLIENT);auth.gs="fixture";auth.access="fixture";auth.expires=System.currentTimeMillis()+3600000;auth.login=Json.obj("offeringSettings",Json.obj("regions",Json.arr(Json.obj("name","test","baseUri","https://westeurope.core.gssv-play-prod.xboxlive.com"))));Pad pad=new Pad();WebPlayer p=new WebPlayer(c,new Cloud(auth,""),pad,720,5000,"H264",false,false,"id",new NativePlayer.Ui(){public void status(String s){}public void stats(String s){}public void error(Exception e){}public void connected(){}});try{p.main.removeCallbacks(p.pads);assertTrue(p.padChanged());p.pads.run();assertFalse(p.padChanged());pad.axes[0]=.5f;assertTrue(p.padChanged());p.pads.run();assertFalse(p.padChanged());pad.buttons=16;assertTrue(p.padChanged());p.pads.run();assertFalse(p.padChanged());}finally{p.close();}}
+}

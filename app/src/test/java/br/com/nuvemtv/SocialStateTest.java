@@ -1,0 +1,7 @@
+package br.com.nuvemtv;
+import org.json.*;import org.junit.*;import org.junit.runner.RunWith;import org.robolectric.*;import org.robolectric.annotation.*;import static org.junit.Assert.*;
+@RunWith(RobolectricTestRunner.class) @Config(sdk=28)
+public class SocialStateTest {
+ @Test public void usesNestedServerFlagsAndDoesNotReverseFollowerDirection(){SocialState s=new SocialState(RuntimeEnvironment.getApplication().getSharedPreferences("state1",0));JSONObject p=Json.obj("xuid","123","isFollowingCaller",true);assertFalse(s.following(p));assertTrue(s.canRequest(p));p=Json.obj("xuid","123","detail",Json.obj("isFollowedByCaller",true,"isFriendRequestSent",true));assertTrue(s.following(p));assertEquals("Amizade solicitada",s.friendLabel(p));assertFalse(s.canRequest(p));}
+ @Test public void keepsOnlyAcceptedActionsAndReconcilesWithServer()throws Exception{SocialState s=new SocialState(RuntimeEnvironment.getApplication().getSharedPreferences("state2",0));JSONObject p=Json.obj("xuid","123","detail",Json.obj("isFollowedByCaller",false,"isFriendRequestSent",false));s.accepted("123",true);s.accepted("123",false);s.observe(p);assertTrue(s.following(p));assertEquals("Amizade solicitada",s.friendLabel(p));p.getJSONObject("detail").put("isFriend",true).put("isFollowedByCaller",true);s.observe(p);assertEquals("Amigos",s.friendLabel(p));assertFalse(s.prefs.contains("request:123"));assertFalse(s.prefs.contains("follow:123"));s.clear();assertTrue(s.prefs.getAll().isEmpty());}
+}

@@ -3,6 +3,19 @@ import android.content.*;import java.util.*;
 final class I18n {
     private static final Map<String,String[]> STRINGS=new HashMap<>();
     static {
+        put("Qualidade da última sessão","Last session quality","Calidad de la última sesión");
+        put("Nenhum vídeo recebido nesta execução.","No video received in this run.","No se ha recibido vídeo en esta ejecución.");
+        put("Solicitado","Requested","Solicitado");put("Recebido","Received","Recibido");
+        put("Resolução correspondente à selecionada.","Resolution matches the selection.","La resolución coincide con la selección.");
+        put("A resolução recebida difere da selecionada. O servidor pode adaptar a sessão.","Received resolution differs from the selection. The server may adapt the session.","La resolución recibida difiere de la seleccionada. El servidor puede adaptar la sesión.");
+        put("Amizade solicitada","Friend request sent","Solicitud de amistad enviada");
+        put("Amigos","Friends","Amigos");
+        put("Seguindo","Following","Siguiendo");
+        put("Ver perfil no Xbox","View Xbox profile","Ver perfil en Xbox");
+        put("Você","You","Tú");
+        put("Mensagens anteriores","Earlier messages","Mensajes anteriores");
+        put("Aceita pelo Xbox · aguardando sincronização","Accepted by Xbox · awaiting sync","Aceptado por Xbox · esperando sincronización");
+        put("Pressione Voltar para acessar os botões superiores. Menu também abre esses controles.","Press Back to focus the top controls. Menu also opens these controls.","Pulsa Atrás para enfocar los controles superiores. Menú también los abre.");
         put("Início","Home","Inicio");
         put("Jogar com amigos","Play with friends","Jugar con amigos");
         put("Volte a jogar","Jump back in","Vuelve a jugar");

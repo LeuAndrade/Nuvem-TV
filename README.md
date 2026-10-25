@@ -1,6 +1,6 @@
-# BXbox Cloud TV — 0.6.0
+# BXbox Cloud TV — 0.7.0
 
-Cliente Android TV de Xbox Cloud Gaming com interface Java Android própria, API 24+. Sem frameworks de interface pesados. `applicationId br.com.nuvemtv`, `versionCode 6`, versão 0.6.0. Guia: [docs/GUIA_GITHUB.md](docs/GUIA_GITHUB.md).
+Cliente Android TV de Xbox Cloud Gaming com interface Java Android própria, API 24+. Sem frameworks de interface pesados. `applicationId br.com.nuvemtv`, `versionCode 7`, versão 0.7.0. Guia: [docs/GUIA_GITHUB.md](docs/GUIA_GITHUB.md).
 
 ## Estado desta entrega
 
@@ -8,9 +8,11 @@ Cliente Android TV de Xbox Cloud Gaming com interface Java Android própria, API
 - Meus jogos: consulta de compras/resgates da conta, separada do catálogo e de assinatura. Jogos não compatíveis com nuvem não são iniciados como stream.
 - Idioma automático pelo sistema ou português, inglês e espanhol.
 - Áudio: reprodução como mídia/jogo, recebimento habilitado e volume da faixa restaurado; áudio remoto separado do vídeo no player WebView. Microfone mono usa taxa suportada pelo aparelho. Informações de voz opcionais, desligadas por padrão.
-- Social: pesquisa corrigida, foto pequena na lista e no perfil, amigos, sugestões, seguir, pedido e mensagens. Grupos, convites e bloqueio são operados pela interface oficial Xbox incorporada ao aplicativo, sem abrir navegador externo. O serviço oficial pode pedir seu próprio primeiro login; os cookies são preservados. Não é um novo cliente nativo de grupos, nem há sucesso simulado.
+- Social: fotos na lista/perfil, rótulos Amigos/Amizade solicitada/Seguindo reconciliados com o servidor, histórico de mensagens e envios aceitos na conversa. Ver perfil abre o perfil oficial da pessoa, sem botão duplicado. Sem atalho social flutuante. Grupos, convites e bloqueio são operados pela interface oficial Xbox incorporada ao aplicativo, sem abrir navegador externo. O serviço oficial pode pedir seu próprio primeiro login; os cookies são preservados. Não é um novo cliente nativo de grupos, nem há sucesso simulado.
 
-As integrações autenticadas e a voz precisam de teste real na conta/TV; esta entrega tem compilação e testes locais, não certificação ponta a ponta. Detalhes, limites e referências: [docs/ALTERACOES_0.6.md](docs/ALTERACOES_0.6.md). Validação: [docs/VALIDACAO.md](docs/VALIDACAO.md).
+As integrações autenticadas e a voz precisam de teste real na conta/TV; esta entrega tem compilação e testes locais, não certificação ponta a ponta. Detalhes, limites e referências: [docs/ALTERACOES_0.7.md](docs/ALTERACOES_0.7.md). Validação: [docs/VALIDACAO.md](docs/VALIDACAO.md).
+
+Estatísticas opcionais mostram RTT/ping ICE, resolução/bitrate reais disponíveis e alvo selecionado. Configurações > Qualidade da última sessão compara os tamanhos solicitado e recebido, inclusive sem estatísticas. Não há redução local automática da resolução nem upscale apresentado como Full HD real. O servidor ainda pode adaptar resolução e compressão.
 
 ## Configurações preservadas
 
@@ -20,7 +22,7 @@ Perfil inicial: Native / H264 / 720p / 5 Mb/s. Native admite somente decoder por
 
 ## Memória
 
-Até quatro células por fileira, carregamento de capas visíveis, grade paginada com reciclagem, dois carregadores de imagens, fila de 20, cache de 3 MiB em RAM e 20 MiB em disco. Metadados até 3 MiB. Ao entrar no streaming, imagens, views e atualizações do catálogo são liberadas/suspensas. Sem vídeos de fundo ou carrossel automático. Captura/encode de voz têm custo quando ligados. As informações de voz só coletam contadores quando habilitadas. A área social oficial cria um WebView remoto apenas ao ser aberta; pode aumentar o consumo de RAM em aparelhos de 1 GB. Recolher mantém a página/grupo; Fechar social ou sair do aplicativo encerra essa página. A continuidade da voz recolhida depende do WebView e precisa de teste físico.
+Até quatro células por fileira, carregamento de capas visíveis, grade paginada com reciclagem, dois carregadores de imagens, fila de 20, cache de 3 MiB em RAM e 20 MiB em disco. Metadados até 3 MiB. Ao entrar no streaming, imagens, views e atualizações do catálogo são liberadas/suspensas. Sem vídeos de fundo ou carrossel automático. Captura/encode de voz têm custo quando ligados. As informações de voz só coletam contadores quando habilitadas. A área social oficial cria um WebView remoto apenas ao ser aberta; pode aumentar o consumo de RAM em aparelhos de 1 GB. Recolher destrói o WebView sem reserva de microfone. Quando o social recebeu a captura, mantém a página para tentar preservar a voz, sem atalho sobre a interface/partida. Reabra por Jogar com amigos após sair da partida. Fechar social ou sair do aplicativo encerra essa página. A continuidade da voz recolhida depende do WebView e precisa de teste físico.
 
 `Wire.java`, `Pad.java` e `LowLatencyDecoderFactory.java` foram preservados. A única dependência de runtime é o WebRTC Android fixado no Gradle; as bibliotecas de teste não entram no APK.
 

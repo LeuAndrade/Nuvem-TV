@@ -1,10 +1,23 @@
-# O que conferir nesta atualização 0.6.0
+# Atualização 0.7.0: social, desempenho e qualidade
 
-A busca usa a decoração aceita pelo endpoint de pesquisa e possui alternativa de perfil exato para respostas 400/404. As fotos aparecem na lista e no perfil. Falhas de autorização continuam sendo informadas.
+- Removido o atalho flutuante Social Xbox da biblioteca e do streaming. A entrada Social Xbox no aplicativo continua em Jogar com amigos; no perfil há um único Ver perfil no Xbox, que abre a página daquela pessoa.
+- O perfil mostra Amigos, Amizade solicitada e Seguindo com base em flags do Xbox e operações aceitas. Uma requisição recusada não muda o rótulo para sucesso. O app consulta o perfil ao abrir para reconciliar alterações externas. Confirmações locais são mantidas por conta e limpas ao sair.
+- Mandar mensagem abre a conversa, lê o texto em contentPayload.content.parts, mostra remetente/data, mantém envios aceitos enquanto sincroniza, evita duplicação por messageId e permite Mensagens anteriores quando há cursor. Atualização a cada 15 segundos apenas nessa tela em primeiro plano, ou manual. Limite de 100 mensagens em cada uma de até seis conversas em memória; a memória de conversa é liberada ao iniciar streaming/sair. Não é arquivo completo de todo o histórico: o servidor e o limite de memória definem o que pode ser exibido.
+- No painel oficial, pressione **Voltar** uma vez para levar o foco aos controles superiores. **Menu** ou **B** do controle também permitem acessá-los; ↓ nos controles retorna à página. Com foco nos controles, Voltar/B sai ou recolhe. Fechar social encerra a página.
+- Sem reserva do microfone social, Voltar ao aplicativo destrói a página remota para não pesar no jogo. Cookies do login são mantidos. Com reserva de captura, conserva a página para tentar preservar o grupo, sem botão sobre o streaming; sair da partida e voltar a Jogar com amigos permite reabri-la.
+- Native e WebView compartilham uma coleta de estatísticas a cada dois segundos quando vídeo/voz são habilitados. Desligados, não fazem essa coleta. O player WebView deixa de serializar/injetar JSON do controle quando ele não mudou e de repetir play() em mídia já reproduzindo. Taxa de envio dos comandos ao servidor preservada.
 
-Áudio do jogo: ajustados foco de mídia, recebimento das faixas e reprodução separada do vídeo no WebView. Microfone: retirada a taxa fixa de captura que alguns aparelhos não aceitam. Isso foi testado localmente com simulações; não houve teste de som em TV física ou conversa autenticada.
+## Qualidade da imagem e ping
 
-Configurações > Streaming > Ativar microfone permite o uso no jogo (é necessário um dispositivo de captura de áudio conectado/disponível). Depois, habilite **Exibir informações de voz** somente se quiser acompanhar o diagnóstico durante o streaming. Essa opção começa desligada. **Último estado da voz** e **Testar microfone** permitem consultar informações nas configurações.
+A resolução selecionada é enviada no tamanho do dispositivo e no pedido de dimensões: 720p = 1280×720; 1080p = 1920×1080. O limite de bitrate escolhido continua no SDP, sem redução automática local da qualidade. O vídeo mantém proporção, sem cortar ou aplicar filtros de embelezamento.
+
+Nas estatísticas, **alvo** identifica a resolução/bitrate escolhidos; o primeiro tamanho é o vídeo realmente recebido. Ping é o RTT do par ICE selecionado, em ms. É ida e volta da conexão WebRTC, não latência total de controle ou tempo de renderização. Quando não está disponível, aparece —, nunca um zero inventado. Não há ping ICMP nem sondagem extra.
+
+Configurações > Streaming > **Qualidade da última sessão** mostra solicitado/recebido e informa diferença, mesmo sem ligar estatísticas. Esse relatório vive somente na execução atual. O servidor pode reduzir a resolução/bitrate pela rede/conta/região; o app não pode garantir Full HD constante ou recuperar detalhe que não veio do servidor. Resolução maior também exige mais do decoder; bitrate baixo em 1080p pode aumentar artefatos. O app preserva suas escolhas, sem trocar escondido por qualidade menor.
+
+## Áudio e diagnóstico
+
+Ative o microfone nas configurações e conceda permissão (é necessário um dispositivo de captura reconhecido pela TV). **Exibir informações de voz** permanece opcional, desligado por padrão. Testar microfone e Último estado da voz continuam nas configurações.
 
 ## Usar amigos, grupos e voz dentro do aplicativo
 
@@ -13,13 +26,13 @@ Configurações > Streaming > Ativar microfone permite o uso no jogo (é necess�
 3. No primeiro acesso, entre com a mesma conta no painel oficial, caso ele solicite. Essa sessão é diferente do login nativo; seus cookies ficam salvos até sair da conta ou o serviço encerrar a sessão.
 4. Na interface do Xbox, use pesquisa, perfil, mensagens, amizade, seguir/bloquear e opções de grupo oferecidas à sua conta. A disponibilidade segue permissões, privacidade, região e recursos do serviço. Não há confirmação de envio inventada pelo app.
 5. Crie/entre no grupo pelos controles oficiais e permita o microfone quando solicitado pelo Android. Permissão concedida não significa que o grupo já está conectado: confira o estado e teste com a outra pessoa na página oficial.
-6. **Voltar ao aplicativo** recolhe a página, conservando a mesma instância para tentar manter o grupo ao navegar e abrir a partida. O atalho **Social Xbox** permite reabri-la. Não pressione Fechar social se pretende continuar no grupo.
+6. **Voltar ao aplicativo** fecha a página sem reserva de captura; quando o social já recebeu o microfone, recolhe e conserva a mesma instância para tentar manter o grupo ao abrir a partida. Não existe atalho flutuante. Saia da partida e entre novamente por Jogar com amigos para reabrir. Não pressione Fechar social se pretende continuar no grupo.
 7. Se o social recebeu o microfone, a próxima partida deixa a captura do jogo desligada para evitar disputa. Para voltar à voz do jogo, feche o social e inicie novamente a partida. Se a partida já usa o microfone, encerre-a antes de transferir a captura ao grupo.
 8. **Fechar social**, sair da conta ou colocar o app em segundo plano fecha a página e encerra sua captura. Não há serviço de voz em segundo plano. O Android/WebView pode limitar áudio de página recolhida: a continuidade precisa ser confirmada no seu aparelho. Em TV com WebView antigo, atualize Android System WebView; o site pode exigir uma versão mais recente.
 
 O painel usa o serviço oficial, não uma implementação independente do protocolo de grupos. Ele não injeta credenciais ou scripts no site. A página remota custa RAM adicional quando aberta; o decoder nativo e as otimizações da biblioteca foram mantidos, mas não é possível prometer desempenho idêntico com grupo ativo em qualquer TV de 1 GB.
 
-# Atualizar para 0.6.0 sem criar outro repositório
+# Atualizar para 0.7.0 sem criar outro repositório
 
 Se você já instalou o APK da entrega anterior, instale o novo APK de mesma arquitetura **por cima**, sem desinstalar. O nome continua BXbox Cloud TV, e a sessão cifrada pode ser reaproveitada quando a assinatura da atualização for compatível. A renovação ainda depende de a Microsoft aceitar sua credencial.
 
@@ -35,7 +48,7 @@ Para atualizar seu repositório já criado:
 git pull --ff-only
 python3 instalar_projeto.py --sem-workflow --substituir
 git add .
-git commit -m "Atualiza para BXbox Cloud TV 0.6.0"
+git commit -m "Atualiza para BXbox Cloud TV 0.7.0"
 git push
 ```
 
@@ -195,6 +208,6 @@ O destaque usa promoções atuais retornadas pelo site oficial, com navegação 
 
 Destaques oficiais, fileiras de catálogo, Volte a jogar, compras em Meus jogos, gêneros, todos os jogos e idiomas continuam disponíveis. Native/WebView, estatísticas, resolução, bitrate, codec e servidor continuam nas configurações. Client ID segue interno. Não substitua seu repositório por um fork.
 
-A assinatura dos APKs locais 0.6 é a mesma dos APKs locais 0.5/0.4/0.3 desta conversa. Isso não garante atualização sobre um APK do GitHub com outra chave. Use a chave do APK instalado para conservar dados.
+A assinatura dos APKs locais 0.7 é a mesma dos APKs locais 0.6/0.5/0.4/0.3 desta conversa. Isso não garante atualização sobre um APK do GitHub com outra chave. Use a chave do APK instalado para conservar dados.
 
-Veja VALIDACAO.md e docs/ALTERACOES_0.6.md para testes e limites.
+Veja VALIDACAO.md e docs/ALTERACOES_0.7.md para testes e limites.
