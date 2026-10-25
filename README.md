@@ -132,7 +132,6 @@ Para aparelhos com poucos recursos, o **Perfil leve** é um ponto de partida. O 
 
 O projeto inclui código-fonte, Gradle Wrapper e workflow do GitHub Actions para gerar APKs ARM32 e ARM64.
 
-- [Passo a passo para gerar e atualizar o APK](docs/GUIA_GITHUB.md)
 - [Notas da versão 0.7](docs/ALTERACOES_0.7.md)
 - [Testes executados e limites de validação](docs/VALIDACAO.md)
 
