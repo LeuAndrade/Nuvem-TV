@@ -18,7 +18,7 @@ final class Catalog {
         JSONObject image = product.optJSONObject("Image_Tile");
         if (image == null) image = product.optJSONObject("Image_Poster");
         String cover = image == null ? "" : coverUrl(image.optString("URL"));
-        return Json.obj("id", title, "productId", id, "name", product.optString("ProductTitle", id),
+        return Json.obj("id", title.isEmpty()?"store:"+id:title, "cloudSupported",!title.isEmpty(), "productId", id, "name", product.optString("ProductTitle", id),
                 "searchName", normalized(product.optString("ProductTitle", id)), "cover", cover, "publisher", product.optString("PublisherName"), "genres", genres);
     }
     static String coverUrl(String value) {
@@ -28,7 +28,7 @@ final class Catalog {
             String host = uri.getHost();
             if (!"https".equals(uri.getScheme()) || host == null || uri.getUserInfo() != null || uri.getPort() != -1) return "";
             host = host.toLowerCase(Locale.ROOT);
-            if (!(host.endsWith(".s-microsoft.com") || host.endsWith(".xboxlive.com") || host.endsWith(".xboxservices.com"))) return "";
+            if (!(host.equals("res.public.onecdn.static.microsoft") || host.endsWith(".s-microsoft.com") || host.endsWith(".xboxlive.com") || host.endsWith(".xboxservices.com"))) return "";
             // Uma miniatura basta até para a tela de detalhes: sem baixar arte de vários megabytes.
             return new URI("https", host, uri.getPath(), "w=320&h=180&q=65&format=jpg", null).toASCIIString();
         } catch (Exception ignored) { return ""; }

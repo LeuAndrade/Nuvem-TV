@@ -19,7 +19,7 @@ public class TvNavigationTest {
     MainActivity activity;ActivityController<MainActivity> controller;
     @Before public void open(){
         RuntimeEnvironment.getApplication().getSharedPreferences("vault",0).edit().clear().commit();
-        RuntimeEnvironment.getApplication().getSharedPreferences("settings",0).edit().clear().commit();
+        RuntimeEnvironment.getApplication().getSharedPreferences("settings",0).edit().clear().putString("language","pt-BR").commit();
         controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();activity.signedIn=true;
         JSONArray games=new JSONArray();for(int i=0;i<20;i++)games.put(Json.obj("id","game-"+i,"name",String.format("Jogo %02d",i),"cover","","genres",Json.arr(i%2==0?"Ação":"Corrida")));
         activity.catalog=games;activity.navigate("library");layout();
@@ -39,7 +39,7 @@ public class TvNavigationTest {
         int first=activity.grid.getSelectedItemPosition();activity.grid.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_RIGHT));activity.grid.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,KeyEvent.KEYCODE_DPAD_RIGHT));layout();assertEquals(first+1,activity.grid.getSelectedItemPosition());assertGreenFocus();
     }
     @Test public void genreChoiceThenDownFocusesFilteredGame(){activity.genreButton.performClick();idle();TextView racing=LibraryUiTest.find(activity.choiceDialog.getWindow().getDecorView(),"Corrida");assertNotNull(racing);racing.performClick();layout();assertEquals(10,activity.grid.getCount());downFrom(activity.genreButton);assertGreenFocus();assertTrue(activity.counter.getText().toString().contains("Jogo"));}
-    @Test public void firstRowReturnsToFilterAndFirstColumnReturnsToSidebar(){downFrom(activity.genreButton);activity.grid.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_UP));layout();assertTrue(activity.genreButton.hasFocus());downFrom(activity.sortButton);activity.grid.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_LEFT));layout();assertTrue(activity.navButtons.get("library").hasFocus());}
+    @Test public void firstRowReturnsToFilterAndFirstColumnReturnsToSidebar(){downFrom(activity.genreButton);activity.grid.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_UP));layout();assertTrue(activity.genreButton.hasFocus());downFrom(activity.sortButton);activity.grid.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_LEFT));layout();assertTrue(activity.navButtons.get("home").hasFocus());}
     @Test public void settingsKeepAllOptionsWithoutClientEditor(){
         activity.settingsPage="stream";activity.settings();layout();
         for(String label:new String[]{"Motor de streaming","Resolução solicitada","Limite de bitrate solicitado","Codec","Solicitar baixa latência no Native","Exibir estatísticas do streaming","Aplicar perfil leve"})assertNotNull(label,LibraryUiTest.find(activity.root,label));

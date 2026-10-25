@@ -124,12 +124,13 @@ final class Auth {
                 "service::http://Passport.NET/purpose::PURPOSE_XBOX_CLOUD_CONSOLE_TRANSFER_TOKEN");
         return result.getString("access_token");
     }
-    String collectionsAuthorization() throws Exception {
+    String collectionsAuthorization() throws Exception {return xboxAuthorization("http://licensing.xboxlive.com");}
+    String xboxAuthorization(String relyingParty) throws Exception {
         ensure();
         JSONObject user=http.json("POST","https://user.auth.xboxlive.com/user/authenticate",null,
             Json.obj("Properties",Json.obj("AuthMethod","RPS","RpsTicket","d="+access,"SiteName","user.auth.xboxlive.com"),"RelyingParty","http://auth.xboxlive.com","TokenType","JWT"));
         JSONObject token=http.json("POST","https://xsts.auth.xboxlive.com/xsts/authorize",null,
-            Json.obj("Properties",Json.obj("SandboxId","RETAIL","UserTokens",Json.arr(user.getString("Token"))),"RelyingParty","http://licensing.xboxlive.com","TokenType","JWT"));
+            Json.obj("Properties",Json.obj("SandboxId","RETAIL","UserTokens",Json.arr(user.getString("Token"))),"RelyingParty",relyingParty,"TokenType","JWT"));
         String uhs=token.getJSONObject("DisplayClaims").getJSONArray("xui").getJSONObject(0).getString("uhs");
         return "XBL3.0 x="+uhs+";"+token.getString("Token");
     }

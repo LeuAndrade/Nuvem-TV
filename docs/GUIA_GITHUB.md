@@ -1,4 +1,12 @@
-# Atualizar para 0.4.0 sem criar outro repositório
+# O que conferir nesta atualização
+
+Esta versão corrige pontos de protocolo de voz, mas não foi testada em TV/conta autenticada. Antes de uma partida, use Configurações > Streaming > Testar microfone. Durante a partida com microfone ligado, observe os contadores do indicador Voz. Pacotes enviados não provam que outra pessoa ouviu.
+
+Meus jogos consulta compras e resgates; se a Microsoft recusar a consulta, o app informa a falha e mantém o cache. A área social tem chamadas reais de pesquisa, amigos, perfil e texto, mas grupo de voz/convite e bloqueio integrado não foram implementados: esses botões encaminham explicitamente para o Xbox oficial, que pode pedir um login próprio. Nenhum convite ou bloqueio é simulado no aplicativo.
+
+Idioma do sistema, Português, English e Español ficam em Configurações > Streaming > Idioma. Metadados mudam na próxima atualização.
+
+# Atualizar para 0.5.0 sem criar outro repositório
 
 Se você já instalou o APK da entrega anterior, instale o novo APK de mesma arquitetura **por cima**, sem desinstalar. O nome continua BXbox Cloud TV, e a sessão cifrada pode ser reaproveitada quando a assinatura da atualização for compatível. A renovação ainda depende de a Microsoft aceitar sua credencial.
 
@@ -14,7 +22,7 @@ Para atualizar seu repositório já criado:
 git pull --ff-only
 python3 instalar_projeto.py --sem-workflow --substituir
 git add .
-git commit -m "Atualiza para BXbox Cloud TV 0.4.0"
+git commit -m "Atualiza para BXbox Cloud TV 0.5.0"
 git push
 ```
 
@@ -169,12 +177,14 @@ Em Configurações, Streaming reúne motor, resolução, bitrate, codec, baixa l
 
 O destaque é estático e usa os metadados da biblioteca real; não exibe gamertag, plano, classificação etária ou popularidade inventados.
 
-## Usar os novos recursos da 0.4
 
-No Início, pressione → para entrar nas fileiras; ←/→ percorrem os jogos e ↑/↓ alternam as categorias. O destaque vem primeiro. Biblioteca e Pesquisar permanecem no menu lateral. As listas vêm da Microsoft e atualizam ao abrir/atualizar e a cada seis horas com catálogo aberto. Não há tarefa contínua em segundo plano.
+## Usar os novos recursos da 0.5
 
-Para voz: Configurações > Streaming > Ativar microfone > Permitir no pedido do Android. Conecte um microfone/headset/entrada de áudio reconhecida pela TV antes da partida. O jogo deve permitir voz. O microfone do controle remoto pode funcionar somente para a busca do sistema; isso depende da TV. Se negar ou revogar a permissão, o jogo continua sem captura. O recurso de voz requer validação em seu aparelho e não foi testado numa TV física nesta entrega.
+- As setas do destaque percorrem as promoções atuais do site oficial. Promoções de pré-venda não viram jogos de nuvem por causa do banner.
+- Volte a jogar fica acima de populares. Game Pass e jogos próprios são fileiras. Todos os jogos abre a grade no fim da página.
+- Meus jogos lista compras/resgates consultados na conta, incluindo jogos sem suporte à nuvem com essa limitação indicada. Game Pass não é contado como compra.
+- Em Jogar com amigos, pesquise o gamertag ou atualize amigos/sugestões. Confira o destinatário e o texto antes de enviar. A Microsoft pode negar ações por autorização/privacidade.
+- Grupo de voz e bloqueio ficam no Xbox oficial, por encaminhamento; não há comunicação de grupo integrada entre as pessoas nesta versão.
+- Para diagnosticar voz, anote o resultado do teste local e o indicador na partida. Se houver amostras locais, mas não houver pacotes enviados, a falha está depois da captura. Se os pacotes crescem mas ninguém ouve, confira chat do jogo, permissões e o recebimento no outro aparelho; esse resultado precisa de validação real.
 
-Ao abrir um jogo, aguarde a consulta de licença. Compra/resgate, acesso por assinatura/pacote/teste e consulta indisponível têm textos diferentes. A API da Microsoft pode não autorizar esse tipo de cliente. Nesse caso o app informa que não conseguiu confirmar, sem afirmar que o jogo não foi comprado. Se nenhuma licença válida aparecer, há orientação para comprar títulos de compra na loja oficial Xbox ou verificar o Game Pass. A validação final é do servidor; jogos comprados em outras lojas/edições ou sem suporte de nuvem podem não funcionar.
-
-Os APKs locais 0.4 foram assinados com a mesma chave dos APKs locais 0.3 desta conversa. Isso não garante compatibilidade com um APK que você gerou no GitHub usando outra chave. Guarde a chave original: ela é necessária para atualizar sem desinstalar.
+Use o mesmo repositório já criado. A chave dos APKs locais 0.5 é a mesma dos APKs locais 0.4/0.3 desta conversa. Isso não garante atualização sobre um APK gerado no GitHub com outra chave. O instalador e o código completo acompanham o pacote.

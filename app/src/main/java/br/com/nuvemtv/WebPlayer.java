@@ -14,6 +14,7 @@ final class WebPlayer {
  final class Bridge {
   @JavascriptInterface public void call(String id,String action,String payload){if(closed)return;worker.execute(()->{try{JSONObject p=Json.parse(payload);Object out;switch(action){case "start":cloud.start(p.getString("title"),p.getInt("height"),ui::status);out=Json.obj("pulse",cloud.pulse);break;case "offer":out=cloud.offer(p.getString("sdp"));break;case "chatOffer":out=cloud.chatOffer(p.getString("sdp"));break;case "ice":out=cloud.ice(p.getJSONArray("candidates"));break;case "keepalive":out=cloud.call("POST","keepalive",new JSONObject());break;default:throw new Exception("Operação inválida");}reply(id,out,null);}catch(Exception e){reply(id,null,e.getMessage());}});}
   @JavascriptInterface public void status(String s){if(!closed)ui.status(s);}
+  @JavascriptInterface public void voice(String s){if(!closed)ui.voice(s);}
   @JavascriptInterface public void stats(String s){if(!closed)ui.stats(s);}
   @JavascriptInterface public void connected(){if(!closed)ui.connected();}
   @JavascriptInterface public void error(String s){if(!closed)ui.error(new Exception(s));}

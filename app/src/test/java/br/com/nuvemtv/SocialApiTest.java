@@ -1,0 +1,10 @@
+package br.com.nuvemtv;
+import org.junit.*;import org.json.*;import java.util.*;import static org.junit.Assert.*;
+public class SocialApiTest {
+ static class Http implements SocialApi.Transport{String method,url,contract;JSONObject body;boolean reject;public JSONObject call(String m,String u,String c,JSONObject b)throws Exception{method=m;url=u;contract=c;body=b;if(reject)throw new java.io.IOException("HTTP 403");return Json.obj("people",Json.arr(Json.obj("xuid","123","gamertag","Test")));}}
+ @Test public void searchEscapesUserInputAndReadsOnlyValidIds()throws Exception{Http h=new Http();SocialApi api=new SocialApi(h);assertEquals(1,api.search("a b&c").length());assertTrue(h.url.contains("q=a+b%26c"));assertEquals("GET",h.method);JSONArray result=SocialApi.people(Json.obj("people",Json.arr(Json.obj("xuid","123"),Json.obj("xuid","123"),Json.obj("xuid","bad"))));assertEquals(1,result.length());}
+ @Test public void friendRequestIsDifferentFromFollowing()throws Exception{Http h=new Http();SocialApi api=new SocialApi(h);api.requestFriend("123");assertEquals("POST",h.method);assertTrue(h.url.contains("friends/v2?method=add"));assertEquals("123",h.body.getJSONArray("xuids").getString(0));api.follow("123");assertEquals("PUT",h.method);assertTrue(h.url.endsWith("people/xuid(123)"));}
+ @Test public void messageSerializesActualContentAndRejectsLongText()throws Exception{Http h=new Http();SocialApi api=new SocialApi(h);api.message("123"," Olá \"amigo\" ");assertEquals("POST",h.method);assertEquals("Olá \"amigo\"",h.body.getJSONArray("parts").getJSONObject(0).getString("text"));try{api.message("123",String.join("",Collections.nCopies(257,"a")));fail();}catch(IllegalArgumentException expected){}}
+ @Test public void serverErrorsDoNotBecomeSuccess()throws Exception{Http h=new Http();h.reject=true;try{new SocialApi(h).requestFriend("123");fail();}catch(java.io.IOException expected){}}
+ @Test public void targetCannotInjectAUrl()throws Exception{Http h=new Http();try{new SocialApi(h).follow("123)/other");fail();}catch(IllegalArgumentException expected){}assertNull(h.method);}
+}

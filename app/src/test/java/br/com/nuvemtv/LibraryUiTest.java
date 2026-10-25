@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public class LibraryUiTest {
     ActivityController<MainActivity> controller;MainActivity activity;
-    @Before public void open(){RuntimeEnvironment.getApplication().getSharedPreferences("vault",0).edit().clear().commit();RuntimeEnvironment.getApplication().getSharedPreferences("settings",0).edit().clear().commit();controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();}
+    @Before public void open(){RuntimeEnvironment.getApplication().getSharedPreferences("vault",0).edit().clear().commit();RuntimeEnvironment.getApplication().getSharedPreferences("settings",0).edit().clear().putString("language","pt-BR").commit();controller=Robolectric.buildActivity(MainActivity.class).setup();activity=controller.get();}
     @After public void close(){controller.pause().stop().destroy();}
     void library(){activity.signedIn=true;activity.catalog=Json.arr(Json.obj("id","one","name","Uma aventura","cover","","publisher","Editora","genres",Json.arr("Ação")),Json.obj("id","two","name","Corrida","cover","","genres",Json.arr("Corrida")));activity.navigate("library");}
     @Test public void cardOpensDetailsAndBackPreservesLibrary(){library();activity.details(activity.catalog.optJSONObject(0));assertEquals("detail",activity.screen);assertNotNull(find(activity.getWindow().getDecorView(),"Jogar"));assertNotNull(find(activity.getWindow().getDecorView(),"Voltar ao início"));activity.onBackPressed();assertEquals("home",activity.screen);assertEquals(2,activity.grid.getAdapter().getCount());}

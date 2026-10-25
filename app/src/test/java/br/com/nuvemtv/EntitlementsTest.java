@@ -18,4 +18,9 @@ public class EntitlementsTest {
  }
  @Test public void queryFailureDoesNotBecomeNotOwned()throws Exception{try{Entitlements.lookup(ID,b->{throw new java.io.IOException("offline");});fail();}catch(java.io.IOException expected){}}
  @Test public void subscriptionBundleDoesNotBecomePurchase()throws Exception{JSONObject parent=license("Single").put("satisfiedByProductIds",Json.arr("9BBBBBBBBBBB"));assertEquals(Entitlements.State.ENTITLED,Entitlements.lookup(ID,b->Json.obj("items",Json.arr(parent))));}
+ @Test public void ownedLibraryIncludesPurchaseBundlesButExcludesSubscriptions()throws Exception{
+  JSONObject direct=license("Single"),child=license("Single").put("productId","9BBBBBBBBBBB").put("satisfiedByProductIds",Json.arr(ID)),subscription=license("Recurring").put("productId","9CCCCCCCCCCC"),trial=license("Single").put("productId","9DDDDDDDDDDD").put("trialData",Json.obj("isTrial",true));
+  JSONArray result=Entitlements.ownedProducts(java.util.Arrays.asList(child,direct,subscription,trial),System.currentTimeMillis());assertEquals(2,result.length());assertEquals(ID,result.getJSONObject(0).getJSONObject("details").getString("productId"));assertEquals("9BBBBBBBBBBB",result.getJSONObject(1).getJSONObject("details").getString("productId"));
+ }
+ @Test public void ownedLibraryDoesNotAcceptTruncatedPaginationAsComplete()throws Exception{try{Entitlements.owned(b->Json.obj("items",new JSONArray(),"continuationToken","repeat"));fail();}catch(Exception expected){assertTrue(expected.getMessage().contains("repetida"));}}
 }

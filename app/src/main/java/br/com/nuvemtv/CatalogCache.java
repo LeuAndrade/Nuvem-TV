@@ -18,10 +18,11 @@ final class CatalogCache {
         } catch (Exception ignored) { return new JSONObject(); }
     }
     synchronized void write(JSONArray all, JSONArray recent) { write(all,recent,new JSONObject()); }
-    synchronized void write(JSONArray all, JSONArray recent, JSONObject feed) {
+    synchronized void write(JSONArray all, JSONArray recent, JSONObject feed) {write(all,recent,feed,new JSONArray(),0);}
+    synchronized void write(JSONArray all, JSONArray recent, JSONObject feed,JSONArray owned,long ownedAt) {
         FileOutputStream output = null;
         try {
-            byte[] bytes = Json.obj("catalog", all, "recent", recent, "feed", feed).toString().getBytes(StandardCharsets.UTF_8);
+            byte[] bytes = Json.obj("catalog", all, "recent", recent, "feed", feed,"owned",owned,"ownedAt",ownedAt).toString().getBytes(StandardCharsets.UTF_8);
             if (bytes.length > 3 * 1024 * 1024) return;
             output = file.startWrite(); output.write(bytes); file.finishWrite(output);
         } catch (Exception ignored) { if (output != null) file.failWrite(output); }

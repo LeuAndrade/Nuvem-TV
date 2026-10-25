@@ -39,9 +39,21 @@ final class Entitlements {
             value=value.replaceAll("\\.(\\d{3})\\d+",".$1");SimpleDateFormat format=new SimpleDateFormat(value.contains(".")?"yyyy-MM-dd'T'HH:mm:ss.SSSXXX":"yyyy-MM-dd'T'HH:mm:ssXXX",Locale.US);format.setLenient(false);long date=format.parse(value).getTime();if(key.equals("startDate")?date>now:date<=now)return false;}
         return true;
     }catch(Exception ignored){return false;}}
-    static State check(Auth auth,String productId)throws Exception{
+    static Query client(Auth auth)throws Exception{
         String authorization=auth.collectionsAuthorization();KeyPairGenerator generator=KeyPairGenerator.getInstance("EC");generator.initialize(new ECGenParameterSpec("secp256r1"));PrivateKey key=generator.generateKeyPair().getPrivate();
-        return lookup(productId,body->{String raw=body.toString();Map<String,String> headers=new HashMap<>();headers.put("Authorization",authorization);headers.put("Signature",signature(key,authorization,raw,System.currentTimeMillis()));headers.put("User-Agent","BXboxCloudTV/0.4.0");return Json.parse(Net.request("POST",URL,null,raw,"application/json; charset=utf-8",null,headers));});
+        return body->{String raw=body.toString();Map<String,String> headers=new HashMap<>();headers.put("Authorization",authorization);headers.put("Signature",signature(key,authorization,raw,System.currentTimeMillis()));headers.put("User-Agent","BXboxCloudTV/0.5.0");return Json.parse(Net.request("POST",URL,null,raw,"application/json; charset=utf-8",null,headers));};
+    }
+    static State check(Auth auth,String productId)throws Exception{return lookup(productId,client(auth));}
+    static JSONArray owned(Query query)throws Exception{
+        JSONObject body=Json.obj("maxPageSize",100,"excludeDuplicates",false,"expandSatisfyingItems",true,"market","neutral","validityType","Valid","entitlementFilters",Json.arr("*:Game"));
+        List<JSONObject> items=new ArrayList<>();Set<String> tokens=new HashSet<>();boolean complete=false;
+        for(int page=0;page<50;page++){JSONObject response=query.page(body);JSONArray batch=response.optJSONArray("items");if(batch==null)throw new Exception("Resposta de licenças incompleta");for(int i=0;i<batch.length();i++){JSONObject item=batch.optJSONObject(i);if(item!=null)items.add(item);}String next=response.optString("continuationToken");if(next.isEmpty()){complete=true;break;}if(!tokens.add(next))throw new Exception("Paginação de licenças repetida");body.put("continuationToken",next);}
+        if(!complete)throw new Exception("Biblioteca muito grande para esta consulta");return ownedProducts(items,System.currentTimeMillis());
+    }
+    static JSONArray ownedProducts(List<JSONObject> items,long now){Set<String> owned=new LinkedHashSet<>();List<JSONObject> candidates=new ArrayList<>();
+        for(JSONObject item:items){String id=item.optString("productId").toUpperCase(Locale.ROOT);JSONObject trial=item.optJSONObject("trialData");if(!id.matches("[A-Z0-9]{12}")||!"Active".equalsIgnoreCase(item.optString("status"))||!"Single".equalsIgnoreCase(item.optString("acquisitionType"))||!"Game".equalsIgnoreCase(item.optString("productType",item.optString("productKind")))||(trial!=null&&trial.optBoolean("isTrial"))||!validDates(item,now))continue;JSONArray parents=item.optJSONArray("satisfiedByProductIds");if(parents==null||parents.length()==0)owned.add(id);else candidates.add(item);}
+        boolean changed=true;while(changed){changed=false;for(JSONObject item:candidates){JSONArray parents=item.optJSONArray("satisfiedByProductIds");if(parents!=null)for(int i=0;i<parents.length();i++)if(owned.contains(parents.optString(i).toUpperCase(Locale.ROOT))){changed|=owned.add(item.optString("productId").toUpperCase(Locale.ROOT));break;}}}
+        JSONArray result=new JSONArray();for(String id:owned)result.put(Json.obj("details",Json.obj("productId",id)));return result;
     }
     static String signature(PrivateKey key,String authorization,String body,long now)throws Exception{
         long ticks=(now/1000+11644473600L)*10000000L;byte[] time=ByteBuffer.allocate(8).putLong(ticks).array();ByteArrayOutputStream payload=new ByteArrayOutputStream();payload.write(new byte[]{0,0,0,1,0});payload.write(time);payload.write(0);

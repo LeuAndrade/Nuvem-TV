@@ -3,7 +3,7 @@ android {
  namespace 'br.com.nuvemtv'
  compileSdk 35
  buildToolsVersion "35.0.0"
- defaultConfig { applicationId 'br.com.nuvemtv'; minSdk 24; targetSdk 35; versionCode 4; versionName '0.4.0' }
+ defaultConfig { applicationId 'br.com.nuvemtv'; minSdk 24; targetSdk 35; versionCode 5; versionName '0.5.0' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  buildTypes {
   lite { minifyEnabled true; shrinkResources true; signingConfig signingConfigs.debug; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
