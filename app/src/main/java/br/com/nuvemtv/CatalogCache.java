@@ -17,10 +17,11 @@ final class CatalogCache {
             return Json.parse(output.toString("UTF-8"));
         } catch (Exception ignored) { return new JSONObject(); }
     }
-    synchronized void write(JSONArray all, JSONArray recent) {
+    synchronized void write(JSONArray all, JSONArray recent) { write(all,recent,new JSONObject()); }
+    synchronized void write(JSONArray all, JSONArray recent, JSONObject feed) {
         FileOutputStream output = null;
         try {
-            byte[] bytes = Json.obj("catalog", all, "recent", recent).toString().getBytes(StandardCharsets.UTF_8);
+            byte[] bytes = Json.obj("catalog", all, "recent", recent, "feed", feed).toString().getBytes(StandardCharsets.UTF_8);
             if (bytes.length > 3 * 1024 * 1024) return;
             output = file.startWrite(); output.write(bytes); file.finishWrite(output);
         } catch (Exception ignored) { if (output != null) file.failWrite(output); }

@@ -4,12 +4,16 @@ final class Net {
  static final class HttpError extends IOException { final int status; final String code;
   HttpError(int s,String c){super("HTTP "+s+" ("+c+")");status=s;code=c;}}
  static String request(String method,String url,String token,String body,String content, String device) throws Exception {
+  return request(method,url,token,body,content,device,java.util.Collections.emptyMap());
+ }
+ static String request(String method,String url,String token,String body,String content,String device,java.util.Map<String,String> headers)throws Exception {
   URI u=URI.create(url);if(!"https".equals(u.getScheme()))throw new IOException("Somente HTTPS permitido");
   HttpURLConnection c=(HttpURLConnection)u.toURL().openConnection();c.setInstanceFollowRedirects(false);c.setConnectTimeout(15000);c.setReadTimeout(25000);c.setRequestMethod(method);
   c.setRequestProperty("Accept","application/json");c.setRequestProperty("Origin","https://www.xbox.com");c.setRequestProperty("x-gssv-client","XboxComBrowser");
   if("catalog.gamepass.com".equals(u.getHost())){c.setRequestProperty("ms-cv","0");c.setRequestProperty("calling-app-name","Xbox Cloud Gaming Web");c.setRequestProperty("calling-app-version","24.17.63");}
   if(token!=null)c.setRequestProperty("Authorization","Bearer "+token);
   if(device!=null)c.setRequestProperty("X-MS-Device-Info",device);
+  for(java.util.Map.Entry<String,String> header:headers.entrySet())c.setRequestProperty(header.getKey(),header.getValue());
   try {
    if(body!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type",content);try(OutputStream out=c.getOutputStream()){out.write(body.getBytes(StandardCharsets.UTF_8));}}
    int status=c.getResponseCode();InputStream in=status>=200&&status<300?c.getInputStream():c.getErrorStream();String result="";

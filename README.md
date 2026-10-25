@@ -1,12 +1,16 @@
-# BXbox Cloud TV — 0.3.0
+# BXbox Cloud TV — 0.4.0
 
 Cliente Android TV de Xbox Cloud Gaming, com interface Java Android própria. Requer Android 7.0/API 24 ou superior. Nome anterior: Nuvem TV. O applicationId, as preferências e a chave do cofre foram preservados para permitir atualizar o aplicativo e manter o login.
 
-## Interface 0.3.0
+## Interface 0.4.0
+
+Início com fileiras de populares em nuvem, adicionados recentemente, saindo em breve e gêneros; atualização automática das listas oficiais. Microfone opcional com permissão Android e envio de voz nos dois motores. Consulta de licença individual nos detalhes, distinguindo compra de acesso por assinatura. Veja `docs/ALTERACOES_0.4.md` para comportamento e limitações.
+
+## Interface preservada da 0.3
 
 A interface foi redesenhada a partir da referência visual fornecida pelo usuário: menu lateral fixo, fundo escuro, acento verde, jogo em destaque no Início e cartões com capas. Biblioteca, pesquisa, histórico, favoritos, detalhes, configurações, ajuda e diálogos usam a mesma linguagem.
 
-- Client ID removido apenas da interface. O valor interno e o valor já salvo são preservados; Auth.java, Cloud.java e Vault.java não foram modificados.
+- Client ID removido apenas da interface. O valor interno e o valor já salvo são preservados; o fluxo de login existente é mantido, com uma consulta adicional de autorização somente para verificar licenças.
 - A grade desenha um contorno verde acima do cartão que tem foco, sem depender do estado de seleção visual da célula reciclada.
 - Ordenação e gênero usam diálogos com opções focáveis. Ao fechar, o foco volta ao filtro; ↓ entra na grade, ↑ da primeira linha retorna ao filtro e ← da primeira coluna retorna ao menu lateral.
 - Configurações organizadas em Streaming, Conexão e Conta e aplicativo. Todas as opções anteriores foram preservadas, exceto o editor público de Client ID solicitado para remoção.
@@ -14,7 +18,7 @@ A interface foi redesenhada a partir da referência visual fornecida pelo usuár
 
 ## Recursos anteriores preservados
 
-- Início em grade com capas e nomes dos jogos, em uma interface escura para controle remoto.
+- Biblioteca em grade com capas e nomes; Início com fileiras por categoria.
 - Busca por nome sem diferenciar acentos, ordenação A–Z/Z–A, filtro por gênero e aba Favoritos.
 - Volte a jogar mantém a ordem recente retornada pelo serviço, com opção de ordenar por nome.
 - Detalhes com capa, nome, categorias e editora, além de Jogar, Voltar ao início e Adicionar/remover favorito.
@@ -34,7 +38,7 @@ Ao iniciar uma partida, o carregador de capas é suspenso, as conexões de image
 
 ## Streaming preservado
 
-NativePlayer.java, WebPlayer.java, Wire.java, Pad.java, LowLatencyDecoderFactory.java e assets/player.js permanecem idênticos à versão 0.1.0 que precedeu este ajuste de interface.
+Wire.java, Pad.java e LowLatencyDecoderFactory.java permanecem idênticos à versão 0.3. Os players receberam somente o caminho opcional de voz e seus controles de permissão, falha e liberação. Não houve alteração na seleção do decoder nem no perfil de vídeo.
 
 Continuam disponíveis: Native/WebView, estatísticas opcionais, resolução de 720p/1080p, pedido de bitrate entre 3 e 15 Mb/s, regiões disponíveis na conta, seleção de codec e solicitação de baixa latência quando suportada.
 
@@ -48,7 +52,7 @@ O Client ID continua no código de autenticação. Não é uma senha nem uma aut
 
 ## Atualizar e compilar
 
-Guia: `docs/GUIA_GITHUB.md`. Validação: `docs/VALIDACAO.md`. Alterações: `docs/ALTERACOES_0.3.md`.
+Guia: `docs/GUIA_GITHUB.md`. Validação: `docs/VALIDACAO.md`. Alterações: `docs/ALTERACOES_0.4.md`.
 
 ```bash
 node tools/test-player.cjs
@@ -63,6 +67,6 @@ APKs em `app/build/outputs/apk/lite/`, um para armeabi-v7a e outro para arm64-v8
 
 Interfaces não públicas de Xbox podem mudar. Catálogo, histórico, entitlement e fila dependem da conta, plano, compras e região. O feedback de que o streaming anterior funciona veio do usuário; não é uma medição de laboratório deste projeto. A nova navegação foi verificada por compilação, testes e renderização de interface, sem um teste de desempenho numa TV física.
 
-Sem microfone, controle virtual, chat ou vibração nesta versão. Não há site oficial embutido.
+Microfone opcional para chat de voz compatível com o jogo; sem controle virtual, interface de grupos Xbox ou vibração. Não há site oficial embutido.
 
 Licença AGPL-3.0. Preserve `LICENSE`, `NOTICE.md` e o código correspondente ao compartilhar APKs. Projeto independente, sem afiliação com Microsoft ou Xbox.

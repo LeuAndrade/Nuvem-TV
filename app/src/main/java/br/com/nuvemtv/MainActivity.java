@@ -18,12 +18,16 @@ import java.util.concurrent.*;
 public class MainActivity extends Activity {
     static final int BG=0xff020f15,PANEL=0xff0b202d,GREEN=0xff9bff24,WHITE=0xfff3f7fa,MUTED=0xff9ab1bd;
     static final int PAGE_SIZE=60;
-    final ExecutorService io=Executors.newSingleThreadExecutor();
+    final ExecutorService io=Executors.newSingleThreadExecutor(),licenseIo=Executors.newSingleThreadExecutor();
     final Handler ui=new Handler(Looper.getMainLooper());final Pad pad=new Pad();
     final Map<String,Button> navButtons=new HashMap<>();
     android.content.SharedPreferences prefs;Auth auth;CoverLoader images;CatalogCache cache;
     LinearLayout root,body,tabs,sidebar;
     TextView notice,hud,counter;Button accountButton,heroButton,sortButton,genreButton;
+    JSONObject feed=new JSONObject();
+    final Map<String,Integer> shelfPositions=new HashMap<>();final List<TvShelf> shelves=new ArrayList<>();
+    String homeFocus="hero";long lastFeedAttempt;boolean foreground;volatile int licenseRequest;
+    final Map<String,Entitlements.State> licenses=new HashMap<>();final Map<String,Long> licenseTimes=new HashMap<>();
     String heroUrl="";ImageView heroImage;EditText searchBox;TvGridView grid;GameAdapter adapter;
     NativePlayer nativePlayer;WebPlayer webPlayer;AlertDialog loginDialog,choiceDialog;
     JSONArray catalog=new JSONArray(),recent=new JSONArray();List<JSONObject> filtered=new ArrayList<>();JSONObject detailGame;
@@ -54,7 +58,7 @@ public class MainActivity extends Activity {
     }
     String focusedTag(){if(root==null)return "";View focus=root.findFocus();Object tag=focus==null?null:focus.getTag();return tag instanceof String?(String)tag:"";}
     void restoreFocus(String tag){
-        final int version=layoutVersion;ui.post(()->{if(playing||root==null||version!=layoutVersion)return;if(tag.equals("grid")&&grid!=null&&grid.getCount()>0){focusGrid();return;}View target=tag.isEmpty()?navButtons.get(screen.equals("settings")?"settings":tab):root.findViewWithTag(tag);if(target!=null)target.requestFocus();});
+        final int version=layoutVersion;ui.post(()->{if(playing||root==null||version!=layoutVersion)return;if(tag.equals("grid")&&grid!=null&&grid.getCount()>0){focusGrid();return;}if(tag.startsWith("shelf:")){for(TvShelf shelf:shelves)if(tag.equals("shelf:"+shelf.key)){shelf.focusAt(shelfPositions.getOrDefault(shelf.key,0));return;}}View target=tag.isEmpty()?navButtons.get(screen.equals("settings")?"settings":tab):root.findViewWithTag(tag);if(target!=null)target.requestFocus();});
     }
     void navigate(String target){tab=target;screen="home";detailGame=null;page=0;selected=0;genre="";order=target.equals("recent")?"recent":"az";pendingFocus="nav:"+target;home();if(target.equals("search")){pendingFocus="";restoreFocus("search");}}
     void addNav(String label,String id,String glyph,Runnable action){
@@ -64,7 +68,7 @@ public class MainActivity extends Activity {
         item.setOnKeyListener((v,key,event)->{if(event.getAction()==KeyEvent.ACTION_DOWN&&key==KeyEvent.KEYCODE_DPAD_RIGHT){enterContent();return true;}return false;});
     }
     void shell(){
-        layoutVersion++;ui.removeCallbacks(searchUpdate);images.screen();grid=null;adapter=null;sortButton=null;genreButton=null;searchBox=null;heroButton=null;heroImage=null;heroUrl="";navButtons.clear();
+        layoutVersion++;licenseRequest++;ui.removeCallbacks(searchUpdate);images.screen();grid=null;adapter=null;sortButton=null;genreButton=null;searchBox=null;heroButton=null;heroImage=null;heroUrl="";navButtons.clear();shelves.clear();
         root=column();root.setPadding(dp(16),dp(10),dp(16),dp(5));root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{0xff021c1c,BG}));setContentView(root);
         LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);
         ImageView mark=new ImageView(this);mark.setImageResource(R.drawable.icon);header.addView(mark,new LinearLayout.LayoutParams(dp(37),dp(37)));
@@ -79,14 +83,14 @@ public class MainActivity extends Activity {
         body=column();body.setPadding(dp(8),dp(6),0,0);workspace.addView(body,new LinearLayout.LayoutParams(0,-1,1));tabs=sidebar;
         notice=text(sessionStatus,10);notice.setTextColor(MUTED);notice.setMaxLines(1);notice.setHorizontallyScrolling(false);notice.setEllipsize(TextUtils.TruncateAt.END);root.addView(notice,new LinearLayout.LayoutParams(-1,dp(19)));
     }
-    void enterContent(){if(grid!=null&&grid.getCount()>0)focusGrid();else if(heroButton!=null)heroButton.requestFocus();else if(searchBox!=null)searchBox.requestFocus();else{View target=body.findViewWithTag("first-control");if(target!=null)target.requestFocus();}}
+    void enterContent(){if(tab.equals("home")&&!shelves.isEmpty()){shelves.get(0).focusAt(shelfPositions.getOrDefault(shelves.get(0).key,0));return;}if(grid!=null&&grid.getCount()>0)focusGrid();else if(heroButton!=null)heroButton.requestFocus();else if(searchBox!=null)searchBox.requestFocus();else{View target=body.findViewWithTag("first-control");if(target!=null)target.requestFocus();}}
     void focusGrid(){if(grid!=null&&grid.getCount()>0){grid.focusPosition(selected);updateSelectionHint();}}
     void wireFilter(View view){
         view.setOnKeyListener((v,key,event)->{if(event.getAction()!=KeyEvent.ACTION_DOWN)return false;if(key==KeyEvent.KEYCODE_DPAD_DOWN&&grid!=null&&grid.getCount()>0){focusGrid();return true;}if(key==KeyEvent.KEYCODE_DPAD_UP&&heroButton!=null){heroButton.requestFocus();return true;}return false;});
         view.setOnFocusChangeListener((v,has)->{if(has&&grid!=null)grid.anchors(v,navButtons.get(tab));});
     }
     void hero(){
-        JSONObject game=recent.optJSONObject(0);if(game==null)game=catalog.optJSONObject(0);final JSONObject featured=game;
+        JSONObject game=recent.optJSONObject(0);if(game==null)for(int i=0;i<catalog.length();i++){JSONObject candidate=catalog.optJSONObject(i);if(candidate!=null&&candidate.optBoolean("hasEntitlement")){game=candidate;break;}}final JSONObject featured=game;
         FrameLayout banner=new FrameLayout(this);banner.setBackground(shape(PANEL));banner.setClipToOutline(true);
         LinearLayout.LayoutParams box=new LinearLayout.LayoutParams(-1,dp(132));box.setMargins(dp(2),dp(2),dp(2),dp(8));body.addView(banner,box);
         heroImage=new ImageView(this);heroImage.setScaleType(ImageView.ScaleType.CENTER_CROP);FrameLayout.LayoutParams heroArt=new FrameLayout.LayoutParams(dp(Math.max(280,(viewportWidth()-(viewportWidth()<800?148:174)-56)*3/5)),-1,Gravity.END);banner.addView(heroImage,heroArt);heroUrl=game==null?"":game.optString("cover");
@@ -94,13 +98,13 @@ public class MainActivity extends Activity {
         LinearLayout info=column();info.setPadding(dp(15),dp(8),dp(12),dp(6));int available=viewportWidth()-(viewportWidth()<800?148:174)-56;FrameLayout.LayoutParams infoSize=new FrameLayout.LayoutParams(dp(Math.max(260,available*2/3)),-1,Gravity.START);banner.addView(info,infoSize);
         TextView overline=text(game==null?"BEM-VINDO À SUA BIBLIOTECA":"EM DESTAQUE NA SUA BIBLIOTECA",9);overline.setTextColor(GREEN);info.addView(overline);
         TextView title=text(game==null?"Seu próximo jogo começa aqui":game.optString("name"),22);title.setTypeface(null,Typeface.BOLD);title.setMaxLines(1);title.setEllipsize(TextUtils.TruncateAt.END);info.addView(title);
-        TextView meta=text(game==null?(signedIn?"Atualize para carregar seus jogos":"Entre na sua conta para explorar o catálogo"):Catalog.genres(game),11);meta.setTextColor(MUTED);meta.setMaxLines(1);meta.setHorizontallyScrolling(false);meta.setEllipsize(TextUtils.TruncateAt.END);info.addView(meta);
+        TextView meta=text(game==null?(signedIn?"Explore as categorias abaixo":"Entre na sua conta para explorar o catálogo"):Catalog.genres(game),11);meta.setTextColor(MUTED);meta.setMaxLines(1);meta.setHorizontallyScrolling(false);meta.setEllipsize(TextUtils.TruncateAt.END);info.addView(meta);
         heroButton=button(game==null?(signedIn?"Atualizar biblioteca":"Entrar na conta"):"Exibir detalhes",()->{if(featured!=null)details(featured);else if(signedIn)load();else login();});heroButton.setTag("hero");primary(heroButton);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-2,dp(31));lp.setMargins(dp(4),dp(3),0,0);info.addView(heroButton,lp);
         heroButton.setOnKeyListener((v,key,event)->{if(key==KeyEvent.KEYCODE_DPAD_DOWN&&event.getAction()==KeyEvent.ACTION_DOWN&&searchBox!=null){searchBox.requestFocus();return true;}return false;});
     }
     void home(){
-        if(playing)return;String wanted=!pendingFocus.isEmpty()?pendingFocus:screen.equals("home")?focusedTag():"grid";pendingFocus="";
-        screen="home";detailGame=null;images.resume();shell();if(tab.equals("home"))hero();
+        if(playing)return;String wanted=!pendingFocus.isEmpty()?pendingFocus:screen.equals("home")?focusedTag():tab.equals("home")?homeFocus:"grid";pendingFocus="";
+        screen="home";detailGame=null;images.resume();shell();if(tab.equals("home")){homeCategories(wanted);return;}
         LinearLayout heading=new LinearLayout(this);heading.setGravity(Gravity.CENTER_VERTICAL);String title=tab.equals("recent")?"Volte a jogar":tab.equals("favorites")?"Minha seleção":tab.equals("search")?"Encontre seu próximo jogo":"Todos os jogos";
         TextView label=text(title,19);label.setTypeface(null,Typeface.BOLD);heading.addView(label,new LinearLayout.LayoutParams(0,-2,1));Button refresh=button("Atualizar",this::load);refresh.setTag("refresh");heading.addView(refresh);body.addView(heading,new LinearLayout.LayoutParams(-1,dp(38)));
         LinearLayout controls=new LinearLayout(this);controls.setGravity(Gravity.CENTER_VERTICAL);body.addView(controls,new LinearLayout.LayoutParams(-1,dp(40)));
@@ -123,6 +127,24 @@ public class MainActivity extends Activity {
         Button prev=button("‹ Anterior",()->{if(page>0){page--;selected=0;renderGrid();focusGrid();}});prev.setTag("previous");footer.addView(prev,new LinearLayout.LayoutParams(dp(94),dp(30)));Button next=button("Próxima ›",()->{if((page+1)*PAGE_SIZE<filtered.size()){page++;selected=0;renderGrid();focusGrid();}});next.setTag("next");footer.addView(next,new LinearLayout.LayoutParams(dp(94),dp(30)));
         wireFilter(searchBox);wireFilter(sortButton);wireFilter(genreButton);sortButton.setNextFocusDownId(grid.getId());genreButton.setNextFocusDownId(grid.getId());searchBox.setNextFocusDownId(grid.getId());renderGrid();restoreFocus(wanted);
     }
+    void openGenre(String name){query="";navigate("library");genre=name;renderGrid();focusGrid();}
+    void homeCategories(String wanted){
+        ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.setClipToPadding(false);LinearLayout content=column();scroll.addView(content);body.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        LinearLayout outer=body;body=content;hero();body=outer;if(heroImage!=null&&!heroUrl.isEmpty())images.bindHero(heroImage,heroUrl);
+        LinearLayout bar=new LinearLayout(this);TextView hint=text("Descubra sua próxima partida",16);hint.setTypeface(null,Typeface.BOLD);bar.addView(hint,new LinearLayout.LayoutParams(0,-2,1));Button refresh=button("Atualizar",this::load);refresh.setTag("refresh");bar.addView(refresh);content.addView(bar);
+        if(!signedIn){caption(content,"Entre na conta para carregar as categorias da nuvem.");restoreFocus(wanted);return;}
+        addShelf(content,"popular","Mais populares em nuvem",HomeFeed.select(feed,"popular",catalog),false);
+        addShelf(content,"added","Adicionados recentemente",HomeFeed.select(feed,"added",catalog),false);
+        addShelf(content,"leaving","Saindo de cena em breve",HomeFeed.select(feed,"leaving",catalog),false);
+        TreeSet<String> names=new TreeSet<>();for(int i=0;i<catalog.length();i++){JSONObject game=catalog.optJSONObject(i);JSONArray gs=game==null?null:game.optJSONArray("genres");if(gs!=null)for(int j=0;j<gs.length();j++){String name=gs.optString(j);if(!name.isEmpty())names.add(name);}}
+        JSONArray genres=new JSONArray();for(String name:names)genres.put(Json.obj("name",name));addShelf(content,"genres","Explore por gênero",genres,true);
+        for(int i=0;i<shelves.size();i++){TvShelf shelf=shelves.get(i);shelf.top=heroButton;if(i>0)shelf.previous=shelves.get(i-1);if(i+1<shelves.size())shelf.next=shelves.get(i+1);}
+        heroButton.setOnKeyListener((v,key,event)->{if(event.getAction()==KeyEvent.ACTION_DOWN&&key==KeyEvent.KEYCODE_DPAD_DOWN&&!shelves.isEmpty()){shelves.get(0).focusAt(shelfPositions.getOrDefault(shelves.get(0).key,0));return true;}return false;});
+        caption(content,"Listas oficiais da Microsoft · atualização automática a cada 6 horas com o catálogo aberto. As listas podem variar por região e disponibilidade na nuvem.");
+        restoreFocus(wanted.equals("grid")?homeFocus:wanted);
+    }
+    void addShelf(LinearLayout content,String key,String label,JSONArray games,boolean genres){TvShelf shelf=new TvShelf(this,key,label,games,genres);content.addView(shelf,new LinearLayout.LayoutParams(-1,-2));if(games.length()>0)shelves.add(shelf);}
+    final Runnable refreshFeed=new Runnable(){public void run(){if(!foreground||playing)return;long now=System.currentTimeMillis();if(signedIn&&!busy&&HomeFeed.due(feed.optLong("updatedAt"),now)&&(lastFeedAttempt==0||now-lastFeedAttempt>=15*60*1000L))load();ui.postDelayed(this,60000);}};
     final Runnable searchUpdate=()->{if(!playing&&screen.equals("home"))renderGrid();};
     Button filterButton(String title,String[] labels,String[] values,String current,java.util.function.Consumer<String> action){
         int at=0;for(int i=0;i<values.length;i++)if(values[i].equals(current))at=i;final String[] chosen={values[at]};
@@ -153,10 +175,49 @@ public class MainActivity extends Activity {
         LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);body.addView(row,new LinearLayout.LayoutParams(-1,0,1));
         FrameLayout art=new FrameLayout(this);art.setBackground(shape(PANEL));art.setClipToOutline(true);LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(0,dp(222),5);ap.setMargins(dp(2),dp(12),dp(18),dp(12));row.addView(art,ap);ImageView image=new ImageView(this);image.setScaleType(ImageView.ScaleType.CENTER_CROP);art.addView(image,new FrameLayout.LayoutParams(-1,-1));images.bindHero(image,game.optString("cover"));
         LinearLayout info=column();row.addView(info,new LinearLayout.LayoutParams(0,-2,5));TextView title=text(game.optString("name"),25);title.setTypeface(null,Typeface.BOLD);title.setMaxLines(3);title.setEllipsize(TextUtils.TruncateAt.END);info.addView(title);TextView genreLabel=text(Catalog.genres(game),12);genreLabel.setTextColor(GREEN);genreLabel.setMaxLines(2);info.addView(genreLabel);if(!game.optString("publisher").isEmpty()){TextView publisher=text(game.optString("publisher"),11);publisher.setTextColor(MUTED);info.addView(publisher);}
-        TextView note=text("Jogue com seu controle na nuvem.",12);note.setTextColor(MUTED);info.addView(note);
+        TextView note=text(signedIn?"Consultando acesso e licença da sua conta…":"Entre na conta para consultar sua biblioteca.",12);note.setTextColor(MUTED);info.addView(note);
         Button play=button("Jogar",()->{if(signedIn)launch(game);else login();});play.setTag("first-control");primary(play);icon(play,"play",BG);info.addView(play,new LinearLayout.LayoutParams(-1,dp(41)));
         boolean saved=favorites().contains(game.optString("id"));Button favorite=button(saved?"Remover dos favoritos":"Adicionar aos favoritos",()->{Set<String> ids=favorites();if(!ids.add(game.optString("id")))ids.remove(game.optString("id"));prefs.edit().putStringSet("favorites",ids).apply();details(game);});favorite.setTag("favorite-action");icon(favorite,"favorite",WHITE);LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,dp(39));fp.setMargins(0,dp(8),0,dp(4));info.addView(favorite,fp);
         Button back=button("Voltar ao início",()->{if(tab.equals("home"))home();else navigate("home");focusGrid();});info.addView(back,new LinearLayout.LayoutParams(-1,dp(37)));play.requestFocus();
+        if(signedIn)checkLicense(game,note,play);
+
+    }
+    void showLicense(JSONObject game,Entitlements.State state,TextView note,Button play){
+        boolean access=game.optBoolean("hasEntitlement");
+        switch(state){
+            case OWNED:note.setText("Na sua biblioteca · licença de compra ou resgate confirmada.");break;
+            case ENTITLED:note.setText("Acesso confirmado na conta · pode ser assinatura, pacote ou teste.");break;
+            case NOT_OWNED:
+                if(access)note.setText("Disponível para sua conta na nuvem. A compra individual não foi identificada.");
+                else note.setText("Não foi identificada uma licença válida deste jogo na conta. Se você não possui o título, é necessário comprá-lo na loja oficial Xbox para jogar. Se estiver no Game Pass, verifique sua assinatura e a região.");break;
+            default:note.setText(access?"Acesso à nuvem identificado. Não foi possível confirmar a compra individual.":"Não foi possível confirmar a licença agora. Verifique sua biblioteca e assinatura na Microsoft.");
+        }
+        // A Microsoft é a autoridade final: não bloqueia jogo por ausência, edições alternativas ou licenças compartilhadas.
+        if(state==Entitlements.State.NOT_OWNED&&!access)play.setText("Verificar acesso / jogar");
+    }
+    void checkLicense(JSONObject game,TextView note,Button play){
+        String productId=game.optString("productId");long now=System.currentTimeMillis();Entitlements.State cached=licenses.get(productId);
+        if(cached!=null&&now-licenseTimes.getOrDefault(productId,0L)<15*60*1000L){showLicense(game,cached,note,play);return;}
+        final int version=layoutVersion,ticket=epoch,request=++licenseRequest;final Auth current=auth;
+        final java.lang.ref.WeakReference<TextView> label=new java.lang.ref.WeakReference<>(note);final java.lang.ref.WeakReference<Button> action=new java.lang.ref.WeakReference<>(play);
+        licenseIo.execute(()->{if(request!=licenseRequest)return;Entitlements.State state;try{state=Entitlements.check(current,productId);}catch(Exception error){state=Entitlements.State.UNKNOWN;}final Entitlements.State result=state;
+            runOnUiThread(()->{if(ticket!=epoch||isDestroyed()||playing)return;licenses.put(productId,result);licenseTimes.put(productId,System.currentTimeMillis());if(version==layoutVersion&&screen.equals("detail")){TextView target=label.get();Button button=action.get();if(target!=null&&button!=null)showLicense(game,result,target,button);}});});
+    }
+    boolean microphoneGranted(){return checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)==android.content.pm.PackageManager.PERMISSION_GRANTED;}
+    boolean microphoneInput(){AudioManager manager=(AudioManager)getSystemService(AUDIO_SERVICE);return manager!=null&&manager.getDevices(AudioManager.GET_DEVICES_INPUTS).length>0;}
+    void microphoneSetting(LinearLayout content){
+        toggle(content,"Ativar microfone","microphone",false);
+        Switch control=(Switch)content.findViewWithTag("setting:microphone");control.setOnCheckedChangeListener((button,enabled)->{
+            if(enabled&&!microphoneGranted()){prefs.edit().putBoolean("microphone",false).apply();requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO},40);}
+            else prefs.edit().putBoolean("microphone",enabled).apply();
+        });
+        caption(content,"(É necessário um microfone ou dispositivo de entrada de áudio conectado e reconhecido pela TV.) A captura começa com a partida e termina ao sair. O jogo também precisa permitir chat de voz.");
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] results){
+        super.onRequestPermissionsResult(requestCode,permissions,results);if(requestCode!=40)return;
+        boolean allowed=results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED;prefs.edit().putBoolean("microphone",allowed).apply();
+        if(root!=null){Switch control=root.findViewWithTag("setting:microphone");if(control!=null)control.setChecked(allowed);}
+        Toast.makeText(this,allowed?"Microfone autorizado para a próxima partida":"Microfone desativado: permissão não concedida",Toast.LENGTH_LONG).show();
     }
     void say(String message){runOnUiThread(()->{if(notice!=null)notice.setText(message);});}
     void fail(Exception error){
@@ -167,9 +228,9 @@ public class MainActivity extends Activity {
         if(busy)return;busy=true;int ticket=epoch;Auth current=auth;sessionStatus="Restaurando sua sessão…";say(sessionStatus);
         io.execute(()->{
             JSONObject saved=cache.read();
-            runOnUiThread(()->{if(ticket!=epoch)return;JSONArray all=saved.optJSONArray("catalog"),history=saved.optJSONArray("recent");if(all!=null)catalog=all;if(history!=null)recent=history;refreshScreen();});
+            runOnUiThread(()->{if(ticket!=epoch)return;JSONArray all=saved.optJSONArray("catalog"),history=saved.optJSONArray("recent");if(all!=null)catalog=all;if(history!=null)recent=history;JSONObject storedFeed=saved.optJSONObject("feed");if(storedFeed!=null)feed=storedFeed;refreshScreen();});
             try{current.ensure();runOnUiThread(()->{if(ticket!=epoch)return;busy=false;signedIn=true;sessionStatus="Conta conectada";refreshScreen();load();});}
-            catch(Exception error){runOnUiThread(()->{if(ticket!=epoch)return;busy=false;if(error instanceof Auth.SessionExpired){signedIn=false;catalog=new JSONArray();recent=new JSONArray();cache.clear();sessionStatus="Sessão desconectada. Entre na conta.";}else{signedIn=current.hasSavedSession();sessionStatus="Sessão salva · sem conexão. Tente Atualizar.";}refreshScreen();});}
+            catch(Exception error){runOnUiThread(()->{if(ticket!=epoch)return;busy=false;if(error instanceof Auth.SessionExpired){signedIn=false;catalog=new JSONArray();recent=new JSONArray();feed=new JSONObject();licenses.clear();licenseTimes.clear();cache.clear();sessionStatus="Sessão desconectada. Entre na conta.";}else{signedIn=current.hasSavedSession();sessionStatus="Sessão salva · sem conexão. Tente Atualizar.";}refreshScreen();});}
         });
     }
     void login(){
@@ -184,18 +245,18 @@ public class MainActivity extends Activity {
         }catch(Exception error){runOnUiThread(()->{if(ticket!=epoch)return;busy=false;signedIn=current.hasSavedSession();sessionStatus=signedIn?"Sessão salva. Tente Atualizar.":"Entre para explorar sua biblioteca";if(loginDialog!=null)loginDialog.dismiss();refreshScreen();if(!current.cancelled)fail(error);});}});
     }
     void load(){
-        if(!signedIn){login();return;}if(busy){say("Atualização em andamento…");return;}
-        busy=true;int ticket=epoch;Auth current=auth;say("Atualizando sua biblioteca…");
+        if(playing)return;if(!signedIn){login();return;}if(busy){say("Atualização em andamento…");return;}
+        busy=true;lastFeedAttempt=System.currentTimeMillis();int ticket=epoch;Auth current=auth;JSONObject previousFeed=feed;say("Atualizando sua biblioteca…");
         io.execute(()->{try{
-            Cloud api=new Cloud(current,prefs.getString("region",""));JSONArray all=api.catalog(api.allTitles());JSONArray history;
+            Cloud api=new Cloud(current,prefs.getString("region",""));JSONObject freshFeed=api.feed(previousFeed);JSONArray all=api.catalog(api.withFeed(api.allTitles(),freshFeed));JSONArray history;
             try{history=api.catalog(api.titles(true));}catch(Exception ignored){history=recent;}
-            cache.write(all,history);JSONArray finalHistory=history;
-            runOnUiThread(()->{if(ticket!=epoch)return;busy=false;catalog=all;recent=finalHistory;sessionStatus="Conta conectada · biblioteca atualizada";refreshScreen();});
-        }catch(Exception error){runOnUiThread(()->{if(ticket!=epoch)return;busy=false;if(error instanceof Auth.SessionExpired){signedIn=false;catalog=new JSONArray();recent=new JSONArray();cache.clear();sessionStatus="Sessão desconectada. Entre novamente.";}else sessionStatus="Não foi possível atualizar · sua sessão foi mantida";refreshScreen();fail(error);});}});
+            cache.write(all,history,freshFeed);JSONArray finalHistory=history;
+            runOnUiThread(()->{if(ticket!=epoch)return;busy=false;catalog=all;recent=finalHistory;feed=freshFeed;licenses.clear();licenseTimes.clear();sessionStatus=freshFeed.optBoolean("partial")?"Conta conectada · algumas categorias aguardam atualização":"Conta conectada · biblioteca atualizada";refreshScreen();});
+        }catch(Exception error){runOnUiThread(()->{if(ticket!=epoch)return;busy=false;if(error instanceof Auth.SessionExpired){signedIn=false;catalog=new JSONArray();recent=new JSONArray();feed=new JSONObject();licenses.clear();licenseTimes.clear();cache.clear();sessionStatus="Sessão desconectada. Entre novamente.";}else sessionStatus="Não foi possível atualizar · sua sessão foi mantida";refreshScreen();fail(error);});}});
     }
     void confirmLogout(){new AlertDialog.Builder(this).setTitle("Sair da conta?").setMessage("O login e a biblioteca desta conta serão removidos deste aparelho.").setNegativeButton("Cancelar",null).setPositiveButton("Sair da conta",(dialog,which)->logout()).show();}
     void logout(){
-        epoch++;auth.cancelled=true;signedIn=false;busy=true;catalog=new JSONArray();recent=new JSONArray();query="";genre="";page=0;selected=0;prefs.edit().remove("favorites").apply();
+        epoch++;auth.cancelled=true;signedIn=false;busy=true;catalog=new JSONArray();recent=new JSONArray();feed=new JSONObject();licenses.clear();licenseTimes.clear();query="";genre="";page=0;selected=0;prefs.edit().remove("favorites").apply();
         if(loginDialog!=null)loginDialog.dismiss();images.pause();Auth current=auth;
         io.execute(()->{current.logout();cache.clear();runOnUiThread(()->{busy=false;sessionStatus="Você saiu da conta";navigate("home");});});
     }
@@ -212,7 +273,7 @@ public class MainActivity extends Activity {
             choose(content,"Limite de bitrate solicitado","bitrate",new String[]{"3 Mb/s","5 Mb/s","8 Mb/s","10 Mb/s","15 Mb/s"},new String[]{"3000","5000","8000","10000","15000"},"5000");
             choose(content,"Codec","codec",new String[]{"H264 • recomendado","VP8","VP9","H265 • se disponível","AV1 • se disponível"},new String[]{"H264","VP8","VP9","H265","AV1"},"H264");
             toggle(content,"Solicitar baixa latência no Native","lowLatency",true);caption(content,"Android 11 ou superior, quando o decodificador oferece suporte.");
-            toggle(content,"Exibir estatísticas do streaming","stats",false);
+            toggle(content,"Exibir estatísticas do streaming","stats",false);microphoneSetting(content);
             Button profile=button("Aplicar perfil leve",()->{prefs.edit().putString("engine","native").putString("resolution","720").putString("bitrate","5000").putString("codec","H264").putBoolean("stats",false).apply();settings();say("Perfil leve aplicado: Native · 720p · H264 · 5 Mb/s");});profile.setTag("profile");content.addView(profile,new LinearLayout.LayoutParams(-1,dp(43)));
             caption(content,"As alterações valem na próxima partida. O servidor pode ajustar resolução, bitrate e codec conforme a sessão.");
         }else if(settingsPage.equals("network")){
@@ -254,30 +315,32 @@ public class MainActivity extends Activity {
     }
 
     void releaseLibraryViews(){
-        images.pause();ui.removeCallbacks(searchUpdate);
+        licenseRequest++;images.pause();ui.removeCallbacks(searchUpdate);ui.removeCallbacks(refreshFeed);shelves.clear();
         if(choiceDialog!=null){choiceDialog.setOnDismissListener(null);choiceDialog.dismiss();choiceDialog=null;}
         if(loginDialog!=null){loginDialog.dismiss();loginDialog=null;}
         grid=null;adapter=null;detailGame=null;root=null;body=null;tabs=null;sidebar=null;counter=null;
         accountButton=null;heroButton=null;heroImage=null;heroUrl="";sortButton=null;genreButton=null;searchBox=null;navButtons.clear();
     }
  void launch(JSONObject game){if(busy){say("Aguarde a operação em andamento");return;}playing=true;releaseLibraryViews();pad.reset();FrameLayout stage=new FrameLayout(this);stage.setBackgroundColor(Color.BLACK);setContentView(stage);hud=text("Preparando sessão…",14);hud.setBackgroundColor(0x99000000);FrameLayout.LayoutParams overlay=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.LEFT);notice=hud;String title=game.optString("id");Auth current=auth;int height=Integer.parseInt(prefs.getString("resolution","720")),kbps=Integer.parseInt(prefs.getString("bitrate","5000"));String codec=prefs.getString("codec","H264");boolean stats=prefs.getBoolean("stats",false);
-  NativePlayer.Ui callbacks=new NativePlayer.Ui(){public void status(String s){if(playing)say(s);}public void stats(String s){if(playing&&stats)say(s);}public void error(Exception e){runOnUiThread(()->{if(!playing)return;stop();fail(e);});}public void connected(){runOnUiThread(()->{if(!playing)return;if(!stats)hud.setVisibility(View.GONE);});}};
-  busy=true;int ticket=++epoch;io.execute(()->{try{Cloud cloud=new Cloud(current,prefs.getString("region",""));runOnUiThread(()->{if(!playing||ticket!=epoch){busy=false;return;}try{if(prefs.getString("engine","native").equals("native")){nativePlayer=new NativePlayer(this,cloud,pad,height,kbps,codec,stats,callbacks);stage.addView(nativePlayer.view,new FrameLayout.LayoutParams(-1,-1));nativePlayer.start(title);}else{webPlayer=new WebPlayer(this,cloud,pad,height,kbps,codec,stats,title,callbacks);stage.addView(webPlayer.view,new FrameLayout.LayoutParams(-1,-1));}stage.addView(hud,overlay);busy=false;}catch(Exception e){busy=false;callbacks.error(e);}});}catch(Exception e){busy=false;callbacks.error(e);}});
+  boolean wantedMic=prefs.getBoolean("microphone",false);final boolean microphone=wantedMic&&microphoneGranted()&&microphoneInput();
+  if(wantedMic&&!microphone)Toast.makeText(this,"Partida sem microfone: verifique a permissão e conecte uma entrada de áudio reconhecida pela TV.",Toast.LENGTH_LONG).show();
+  NativePlayer.Ui callbacks=new NativePlayer.Ui(){public void status(String s){if(playing){say(s);if(s.startsWith("Microfone"))runOnUiThread(()->{if(playing)Toast.makeText(MainActivity.this,s,Toast.LENGTH_LONG).show();});}}public void stats(String s){if(playing&&stats)say(s);}public void error(Exception e){runOnUiThread(()->{if(!playing)return;stop();fail(e);});}public void connected(){runOnUiThread(()->{if(!playing)return;if(!stats)hud.setVisibility(View.GONE);});}};
+  busy=true;int ticket=++epoch;io.execute(()->{try{Cloud cloud=new Cloud(current,prefs.getString("region",""));runOnUiThread(()->{if(!playing||ticket!=epoch){busy=false;return;}try{if(prefs.getString("engine","native").equals("native")){nativePlayer=new NativePlayer(this,cloud,pad,height,kbps,codec,stats,microphone,callbacks);stage.addView(nativePlayer.view,new FrameLayout.LayoutParams(-1,-1));nativePlayer.start(title);}else{webPlayer=new WebPlayer(this,cloud,pad,height,kbps,codec,stats,microphone,title,callbacks);stage.addView(webPlayer.view,new FrameLayout.LayoutParams(-1,-1));}stage.addView(hud,overlay);busy=false;}catch(Exception e){busy=false;callbacks.error(e);}});}catch(Exception e){busy=false;callbacks.error(e);}});
  }
 
 
-    void stop(){epoch++;playing=false;if(nativePlayer!=null){nativePlayer.close();nativePlayer=null;}if(webPlayer!=null){webPlayer.close();webPlayer=null;}images.resume();screen="home";pendingFocus="grid";home();}
+    void stop(){epoch++;playing=false;if(nativePlayer!=null){nativePlayer.close();nativePlayer=null;}if(webPlayer!=null){webPlayer.close();webPlayer=null;}images.resume();screen="home";pendingFocus=tab.equals("home")?homeFocus:"grid";home();if(foreground){ui.removeCallbacks(refreshFeed);ui.postDelayed(refreshFeed,60000);}}
     @Override public boolean dispatchKeyEvent(KeyEvent event){if(playing&&(event.getSource()&InputDevice.SOURCE_GAMEPAD)==InputDevice.SOURCE_GAMEPAD&&pad.key(event))return true;return super.dispatchKeyEvent(event);}
     @Override public boolean onGenericMotionEvent(MotionEvent event){if(playing&&pad.motion(event))return true;return super.onGenericMotionEvent(event);}
     @Override public void onBackPressed(){
         if(playing)new AlertDialog.Builder(this).setTitle("Encerrar a partida?").setPositiveButton("Encerrar",(dialog,which)->stop()).setNegativeButton("Continuar",null).show();
-        else if(!screen.equals("home")){pendingFocus=screen.equals("detail")?"grid":"nav:"+tab;home();}
+        else if(!screen.equals("home")){pendingFocus=screen.equals("detail")?(tab.equals("home")?homeFocus:"grid"):"nav:"+tab;home();}
         else if(!tab.equals("home"))navigate("home");
         else super.onBackPressed();
     }
     @Override protected void onPause(){super.onPause();pad.reset();}
-    @Override protected void onStart(){super.onStart();if(images!=null&&!playing){images.resume();if(adapter!=null)adapter.notifyDataSetChanged();}}
-    @Override protected void onStop(){super.onStop();if(playing&&!isChangingConfigurations())stop();if(images!=null)images.pause();}
-    @Override protected void onDestroy(){epoch++;auth.cancelled=true;ui.removeCallbacksAndMessages(null);if(loginDialog!=null)loginDialog.dismiss();if(choiceDialog!=null)choiceDialog.dismiss();if(nativePlayer!=null)nativePlayer.close();if(webPlayer!=null)webPlayer.close();images.close();io.shutdownNow();super.onDestroy();}
+    @Override protected void onStart(){super.onStart();foreground=true;ui.removeCallbacks(refreshFeed);ui.postDelayed(refreshFeed,60000);if(images!=null&&!playing){images.resume();if(adapter!=null)adapter.notifyDataSetChanged();for(TvShelf shelf:shelves)shelf.bind();if(heroImage!=null&&!heroUrl.isEmpty())images.bindHero(heroImage,heroUrl);}}
+    @Override protected void onStop(){super.onStop();foreground=false;ui.removeCallbacks(refreshFeed);if(playing&&!isChangingConfigurations())stop();if(images!=null)images.pause();}
+    @Override protected void onDestroy(){epoch++;auth.cancelled=true;ui.removeCallbacksAndMessages(null);if(loginDialog!=null)loginDialog.dismiss();if(choiceDialog!=null)choiceDialog.dismiss();if(nativePlayer!=null)nativePlayer.close();if(webPlayer!=null)webPlayer.close();images.close();io.shutdownNow();licenseIo.shutdownNow();super.onDestroy();}
 
 }

@@ -1,4 +1,4 @@
-# Atualizar a versão anterior sem criar outro repositório
+# Atualizar para 0.4.0 sem criar outro repositório
 
 Se você já instalou o APK da entrega anterior, instale o novo APK de mesma arquitetura **por cima**, sem desinstalar. O nome continua BXbox Cloud TV, e a sessão cifrada pode ser reaproveitada quando a assinatura da atualização for compatível. A renovação ainda depende de a Microsoft aceitar sua credencial.
 
@@ -14,7 +14,7 @@ Para atualizar seu repositório já criado:
 git pull --ff-only
 python3 instalar_projeto.py --sem-workflow --substituir
 git add .
-git commit -m "Atualiza para BXbox Cloud TV 0.3.0"
+git commit -m "Atualiza para BXbox Cloud TV 0.4.0"
 git push
 ```
 
@@ -168,3 +168,13 @@ A borda verde forte indica o foco real do controle; o fundo verde discreto no me
 Em Configurações, Streaming reúne motor, resolução, bitrate, codec, baixa latência, estatísticas e perfil leve. Conexão reúne servidor e diagnóstico. Conta e aplicativo reúne login/saída e licenças. O Client ID permanece interno e não pode ser alterado pela interface.
 
 O destaque é estático e usa os metadados da biblioteca real; não exibe gamertag, plano, classificação etária ou popularidade inventados.
+
+## Usar os novos recursos da 0.4
+
+No Início, pressione → para entrar nas fileiras; ←/→ percorrem os jogos e ↑/↓ alternam as categorias. O destaque vem primeiro. Biblioteca e Pesquisar permanecem no menu lateral. As listas vêm da Microsoft e atualizam ao abrir/atualizar e a cada seis horas com catálogo aberto. Não há tarefa contínua em segundo plano.
+
+Para voz: Configurações > Streaming > Ativar microfone > Permitir no pedido do Android. Conecte um microfone/headset/entrada de áudio reconhecida pela TV antes da partida. O jogo deve permitir voz. O microfone do controle remoto pode funcionar somente para a busca do sistema; isso depende da TV. Se negar ou revogar a permissão, o jogo continua sem captura. O recurso de voz requer validação em seu aparelho e não foi testado numa TV física nesta entrega.
+
+Ao abrir um jogo, aguarde a consulta de licença. Compra/resgate, acesso por assinatura/pacote/teste e consulta indisponível têm textos diferentes. A API da Microsoft pode não autorizar esse tipo de cliente. Nesse caso o app informa que não conseguiu confirmar, sem afirmar que o jogo não foi comprado. Se nenhuma licença válida aparecer, há orientação para comprar títulos de compra na loja oficial Xbox ou verificar o Game Pass. A validação final é do servidor; jogos comprados em outras lojas/edições ou sem suporte de nuvem podem não funcionar.
+
+Os APKs locais 0.4 foram assinados com a mesma chave dos APKs locais 0.3 desta conversa. Isso não garante compatibilidade com um APK que você gerou no GitHub usando outra chave. Guarde a chave original: ela é necessária para atualizar sem desinstalar.
