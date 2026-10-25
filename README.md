@@ -1,40 +1,154 @@
-# BXbox Cloud TV — 0.7.0
+<div align="center">
 
-Cliente Android TV de Xbox Cloud Gaming com interface Java Android própria, API 24+. Sem frameworks de interface pesados. `applicationId br.com.nuvemtv`, `versionCode 7`, versão 0.7.0. Guia: [docs/GUIA_GITHUB.md](docs/GUIA_GITHUB.md).
+# BXbox Cloud TV
 
-## Estado desta entrega
+### Seus jogos na nuvem, em uma interface feita para a sua TV.
 
-- Início: destaques promocionais oficiais atualizáveis; Volte a jogar em fileira horizontal acima de populares; Game Pass, transmita seu próprio jogo, adicionados, saindo, gêneros e acesso à grade de todos os jogos.
-- Meus jogos: consulta de compras/resgates da conta, separada do catálogo e de assinatura. Jogos não compatíveis com nuvem não são iniciados como stream.
-- Idioma automático pelo sistema ou português, inglês e espanhol.
-- Áudio: reprodução como mídia/jogo, recebimento habilitado e volume da faixa restaurado; áudio remoto separado do vídeo no player WebView. Microfone mono usa taxa suportada pelo aparelho. Informações de voz opcionais, desligadas por padrão.
-- Social: fotos na lista/perfil, rótulos Amigos/Amizade solicitada/Seguindo reconciliados com o servidor, histórico de mensagens e envios aceitos na conversa. Ver perfil abre o perfil oficial da pessoa, sem botão duplicado. Sem atalho social flutuante. Grupos, convites e bloqueio são operados pela interface oficial Xbox incorporada ao aplicativo, sem abrir navegador externo. O serviço oficial pode pedir seu próprio primeiro login; os cookies são preservados. Não é um novo cliente nativo de grupos, nem há sucesso simulado.
+**Catálogo organizado · Dois motores de streaming · Recursos sociais · Foco em leveza**
 
-As integrações autenticadas e a voz precisam de teste real na conta/TV; esta entrega tem compilação e testes locais, não certificação ponta a ponta. Detalhes, limites e referências: [docs/ALTERACOES_0.7.md](docs/ALTERACOES_0.7.md). Validação: [docs/VALIDACAO.md](docs/VALIDACAO.md).
+Android TV • Android 7.0 ou superior • ARM32 e ARM64 • Versão 0.7.0
 
-Estatísticas opcionais mostram RTT/ping ICE, resolução/bitrate reais disponíveis e alvo selecionado. Configurações > Qualidade da última sessão compara os tamanhos solicitado e recebido, inclusive sem estatísticas. Não há redução local automática da resolução nem upscale apresentado como Full HD real. O servidor ainda pode adaptar resolução e compressão.
+</div>
 
-## Configurações preservadas
+---
 
-Native/WebView local, estatísticas, 720p/1080p, pedido de bitrate de 3 a 15 Mb/s, codecs, região, baixa latência suportada, perfil leve, conta/logout e licenças. Client ID permanece interno e sem editor público. O login existente é restaurado pelo refresh token cifrado no Android Keystore. Erros temporários de rede não apagam a conta.
+O **BXbox Cloud TV** é um cliente independente de Xbox Cloud Gaming para Android TV, com navegação por controle, uma biblioteca visual e opções para ajustar a transmissão ao seu aparelho e à sua conexão.
 
-Perfil inicial: Native / H264 / 720p / 5 Mb/s. Native admite somente decoder por hardware. Codec, resolução, bitrate e baixa latência dependem de servidor, hardware e driver. Não há garantia universal de desempenho em qualquer aparelho de 1 GB.
+O projeto prioriza uma interface simples e o uso cuidadoso de memória, com atenção especial a TVs e TV Boxes de poucos recursos, incluindo aparelhos com 1 GB de RAM.
 
-## Memória
+## 🎮 Uma biblioteca para descobrir sua próxima partida
 
-Até quatro células por fileira, carregamento de capas visíveis, grade paginada com reciclagem, dois carregadores de imagens, fila de 20, cache de 3 MiB em RAM e 20 MiB em disco. Metadados até 3 MiB. Ao entrar no streaming, imagens, views e atualizações do catálogo são liberadas/suspensas. Sem vídeos de fundo ou carrossel automático. Captura/encode de voz têm custo quando ligados. As informações de voz só coletam contadores quando habilitadas. A área social oficial cria um WebView remoto apenas ao ser aberta; pode aumentar o consumo de RAM em aparelhos de 1 GB. Recolher destrói o WebView sem reserva de microfone. Quando o social recebeu a captura, mantém a página para tentar preservar a voz, sem atalho sobre a interface/partida. Reabra por Jogar com amigos após sair da partida. Fechar social ou sair do aplicativo encerra essa página. A continuidade da voz recolhida depende do WebView e precisa de teste físico.
+Explore os jogos em fileiras horizontais com capas, nomes e navegação pelas setas do controle:
 
-`Wire.java`, `Pad.java` e `LowLatencyDecoderFactory.java` foram preservados. A única dependência de runtime é o WebRTC Android fixado no Gradle; as bibliotecas de teste não entram no APK.
+- **Destaques promovidos:** campanhas e destaques obtidos do site oficial do Xbox Cloud.
+- **Volte a jogar:** seus jogos recentes, logo na página inicial.
+- **Mais populares em nuvem:** descubra títulos em evidência no catálogo.
+- **Jogar com o Game Pass:** explore a seleção disponível por assinatura.
+- **Transmita seu próprio jogo:** encontre títulos do catálogo de compra e transmissão.
+- **Adicionados recentemente:** acompanhe as novidades.
+- **Saindo de cena em breve:** veja a seleção disponibilizada pela Microsoft.
+- **Gêneros:** escolha o tipo de jogo que quer encontrar.
+- **Todos os jogos:** abra o catálogo completo com busca, ordenação A–Z/Z–A e filtros por gênero.
 
-## Compilar
+As categorias usam metadados da Microsoft e contam com atualização automática e manual. O conteúdo pode variar conforme o catálogo, a região e a disponibilidade do serviço.
 
-Java 17, Android SDK 35/build-tools 35.0.0, Gradle 8.9.
+## 📚 Seus jogos, do seu jeito
+
+- **Meus jogos** consulta compras e resgates da conta, separando a posse individual do acesso por assinatura.
+- Detalhes do jogo com imagem, nome e opções para jogar ou voltar à biblioteca.
+- Favoritos para reunir sua seleção pessoal.
+- Consulta de licença e indicação quando não for possível confirmar a compra ou o acesso.
+- Acesso à loja oficial para os títulos que precisem ser adquiridos.
+
+A compra de um jogo não garante compatibilidade com a nuvem: o título também precisa estar habilitado para streaming pelo Xbox.
+
+## ⚡ Leveza desde a biblioteca até a partida
+
+- Interface Android nativa, sem frameworks de interface pesados.
+- Capas carregadas conforme ficam visíveis.
+- Fileiras e grade com reciclagem de células.
+- Cache de imagens limitado para controlar o consumo de memória.
+- Liberação das imagens e suspensão das atualizações da biblioteca ao iniciar o streaming.
+- Página social criada somente quando aberta e liberada ao sair quando não precisa manter a captura de voz.
+- Sem vídeos de fundo ou carrosséis automáticos.
+- **Perfil leve** para aplicar rapidamente Native, H264, 720p e 5 Mb/s.
+
+No modo Native, a decodificação de vídeo utiliza **hardware compatível**, evitando o fallback para decodificação por software. A opção de baixa latência aproveita o suporte oferecido pelo decoder e pelo Android.
+
+## 🖥️ Escolha como jogar
+
+| Opção | O que oferece |
+| --- | --- |
+| **Native** | Reprodução com WebRTC Android e decodificação de vídeo por hardware. |
+| **WebView** | Player WebRTC local do aplicativo, executado pelo Android System WebView. |
+| **Resolução** | Solicitação de 720p ou 1080p. |
+| **Bitrate** | Limites selecionáveis de 3, 5, 8, 10 ou 15 Mb/s. |
+| **Codec** | H264, VP8, VP9 e opções de H265/AV1 quando disponíveis e compatíveis. |
+| **Servidor** | Seleção automática ou escolha entre as regiões disponíveis para a conta. |
+| **Baixa latência** | Solicitação no Native quando suportada pelo hardware e pelo sistema. |
+
+O aplicativo preserva suas escolhas de resolução e bitrate. A transmissão final continua sujeita à adaptação do servidor, às condições da rede e à compatibilidade do aparelho.
+
+## 📊 Saiba como a transmissão está chegando
+
+Ative as estatísticas para acompanhar os dados disponíveis da sessão:
+
+- Resolução recebida e resolução solicitada.
+- Taxa de quadros por segundo — FPS.
+- Bitrate recebido e limite escolhido.
+- **Ping da conexão WebRTC**, em milissegundos.
+- Tempo de decodificação, perda de pacotes e identificação do decoder, quando informados pelo motor.
+
+Em **Configurações → Streaming → Qualidade da última sessão**, compare a resolução solicitada com a realmente recebida, mesmo sem deixar as estatísticas sobre o jogo.
+
+O ping representa o tempo de ida e volta da conexão WebRTC; não corresponde à latência completa do controle até a imagem na TV. Dados indisponíveis são indicados como tal.
+
+## 👥 Jogar com amigos
+
+Encontre pessoas e acompanhe suas conversas sem sair do aplicativo:
+
+- Pesquisa por gamertag.
+- Lista de amigos e sugestões de amizade.
+- Foto do usuário na lista e no perfil.
+- Solicitação de amizade com indicação **Amizade solicitada** após o pedido ser aceito pelo serviço.
+- Opção de seguir com indicação **Seguindo**.
+- Histórico de mensagens, envio de texto e atualização da conversa.
+- Carregamento de mensagens anteriores quando disponibilizadas pelo serviço, dentro do limite de memória do aplicativo.
+- **Ver perfil no Xbox** abre a página oficial daquela pessoa dentro do app.
+
+Grupos, convites, bloqueio e demais controles oficiais ficam acessíveis pela área Xbox incorporada ao aplicativo. Essas operações são realizadas na interface original do serviço, que pode solicitar um primeiro login separado. A disponibilidade depende das permissões e dos recursos da conta.
+
+A interface permanece limpa, **sem atalho social flutuante sobre a biblioteca ou o streaming**. Na página oficial, pressione **Voltar** para acessar os botões superiores; **Menu** também leva o foco aos controles.
+
+## 🎙️ Microfone e voz sob seu controle
+
+- Ativação do microfone nas configurações, com solicitação de permissão ao Android.
+- Suporte à captura de voz no jogo quando a sessão e o título permitirem.
+- Teste local do microfone e consulta ao último estado de voz.
+- Informações de voz opcionais, **desligadas por padrão**.
+- Separação entre a captura do jogo e a captura reservada à área social, evitando disputar o mesmo microfone.
+
+É necessário um microfone ou dispositivo de entrada de áudio reconhecido pela TV. A comunicação em grupo utiliza a área oficial incorporada; sua continuidade ao recolher a página depende do WebView. Fechar o social ou colocar o aplicativo em segundo plano encerra essa página e sua captura.
+
+## 🌍 Idioma e conta
+
+- Idioma automático conforme o sistema.
+- Português, inglês e espanhol selecionáveis nas configurações.
+- Login lembrado no aparelho, com restauração da sessão salva enquanto a credencial permanecer válida.
+- Opção **Sair da conta** para desconectar e limpar os dados locais associados.
+- Autenticação sem campo de Client ID exposto ao usuário.
+
+## 🚀 Comece a jogar
+
+1. Instale o APK correspondente à arquitetura do aparelho: **ARM32** ou **ARM64**.
+2. Abra o BXbox Cloud TV e autorize sua conta Microsoft/Xbox.
+3. Aguarde a atualização do catálogo.
+4. Escolha um jogo e selecione **Jogar**.
+5. Ajuste motor, resolução, bitrate, codec e servidor conforme o aparelho e a conexão.
+
+Para aparelhos com poucos recursos, o **Perfil leve** é um ponto de partida. O acesso aos jogos exige uma conta elegível e as assinaturas, compras ou permissões necessárias para cada título.
+
+## 🛠️ Código aberto e compilação pelo GitHub
+
+O projeto inclui código-fonte, Gradle Wrapper e workflow do GitHub Actions para gerar APKs ARM32 e ARM64.
+
+- [Passo a passo para gerar e atualizar o APK](docs/GUIA_GITHUB.md)
+- [Notas da versão 0.7](docs/ALTERACOES_0.7.md)
+- [Testes executados e limites de validação](docs/VALIDACAO.md)
+
+Para compilar localmente: Java 17, Android SDK 35, Build Tools 35.0.0 e Gradle 8.9.
 
 ```bash
 node tools/test-player.cjs
 bash gradlew :app:testLiteUnitTest :app:lintLite :app:assembleLite
 ```
 
-APKs ARM32/ARM64 em `app/build/outputs/apk/lite/`. Workflow do GitHub em `.github/workflows/android.yml`. A assinatura de uma atualização deve ser a mesma do APK instalado para conservar dados. APKs locais desta conversa usam a chave local preservada; builds em outro ambiente podem usar outra chave. Nunca publique a chave privada no repositório.
+Os APKs são gerados em `app/build/outputs/apk/lite/`. Para atualizar uma instalação mantendo seus dados, utilize um APK assinado com a mesma chave.
 
-AGPL-3.0, com créditos de protocolo a XStreaming. Preserve LICENSE, NOTICE e o código correspondente ao distribuir os APKs. Projeto independente, sem afiliação com Microsoft ou Xbox.
+## ℹ️ Sobre o projeto
+
+**BXbox Cloud TV é um projeto independente, sem afiliação com Microsoft ou Xbox.** Não fornece jogos, assinaturas ou licenças e não substitui os serviços oficiais.
+
+O foco em aparelhos de 1 GB não representa garantia de desempenho em todos os modelos. Qualidade, fluidez, codecs, áudio e recursos sociais dependem do hardware, da conexão e dos serviços do Xbox. As integrações autenticadas e a voz ainda exigem validação em aparelhos e contas reais; os testes locais estão documentados acima.
+
+Código distribuído sob **AGPL-3.0**, com créditos às adaptações de protocolo do [XStreaming](https://github.com/Geocld/XStreaming). Consulte [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md). Preserve a licença, os créditos e o código correspondente ao redistribuir o projeto.
