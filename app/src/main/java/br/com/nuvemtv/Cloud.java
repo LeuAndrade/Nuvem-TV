@@ -47,7 +47,9 @@ final class Cloud {
    Thread.sleep(1000);
   }throw new Exception("Sessão cancelada ou fila expirou");
  }
- JSONObject offer(String sdp)throws Exception{int request=++sdpRequest;call("POST","sdp",Json.obj("messageType","offer","requestId",request,"sdp",sdp,"configuration",Json.obj("chatStream",Json.obj("minVersion",1,"maxVersion",1),"chatConfiguration",Json.obj("bytesPerSample",2,"expectedClipDurationMs",20,"format",Json.obj("codec","opus","container","webm"),"numChannels",1,"sampleFrequencyHz",24000),"chat",Json.obj("minVersion",1,"maxVersion",1),"control",Json.obj("minVersion",1,"maxVersion",3),"input",Json.obj("minVersion",1,"maxVersion",8),"message",Json.obj("minVersion",1,"maxVersion",1))));return awaitSdp(request);}
+ static JSONObject offerConfiguration(boolean microphone){JSONObject config=Json.obj("chatConfiguration",Json.obj("bytesPerSample",2,"expectedClipDurationMs",20,"format",Json.obj("codec","opus","container","webm"),"numChannels",1,"sampleFrequencyHz",24000),"chat",Json.obj("minVersion",1,"maxVersion",1),"control",Json.obj("minVersion",1,"maxVersion",3),"input",Json.obj("minVersion",1,"maxVersion",8),"message",Json.obj("minVersion",1,"maxVersion",1));if(microphone)try{config.put("chatStream",Json.obj("minVersion",1,"maxVersion",1));}catch(org.json.JSONException error){throw new IllegalStateException(error);}return config;}
+ JSONObject offer(String sdp)throws Exception{return offer(sdp,false);}
+ JSONObject offer(String sdp,boolean microphone)throws Exception{int request=++sdpRequest;call("POST","sdp",Json.obj("messageType","offer","requestId",request,"sdp",sdp,"configuration",offerConfiguration(microphone)));return awaitSdp(request);}
  JSONArray ice(JSONArray candidates)throws Exception{call("POST","ice",Json.obj("messageType","iceCandidate","candidate",candidates));return new JSONArray(waitExchange("ice").getString("exchangeResponse"));}
  void stop(){stopped=true;String old=session;session="";if(!old.isEmpty())try{Net.request("DELETE",old,auth.gs,null,"application/json",null);}catch(Exception ignored){}}
 }

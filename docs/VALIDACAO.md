@@ -1,26 +1,25 @@
-# Validação — BXbox Cloud TV 0.5.0
+# Validação — BXbox Cloud TV 0.6.0
 
-## Resultado executado
+## Verificado no ambiente de desenvolvimento
 
-- Gradle `:app:testLiteUnitTest :app:lintLite :app:assembleLite`: BUILD SUCCESSFUL, Java 17, SDK/build-tools 35, Gradle 8.9.
-- 55 testes Java/Robolectric: zero falhas e zero erros. Regressão de login, filtros, favoritos, foco na TV, navegação das fileiras, retorno ao mesmo jogo, posse separada de assinatura/teste, pacotes comprados, paginação incompleta, promoções oficiais, idioma automático/manual e requisições sociais.
-- Testes de serialização social usam um transporte simulado: validam método/URL/corpo, codificação de pesquisa, XUID, limites de mensagem e propagação de falha do servidor. Não comprovam que uma conta real recebeu uma solicitação/mensagem.
-- `node tools/test-player.cjs`: passou. SDP, ICE, handshake, pacote de controle, áudio inicial sendrecv, addTrack, renegociação, chatStream ausente sem captura, permissão negada sem parar o jogo, contadores outbound e liberação inclusive quando a captura termina de abrir após encerramento. O PeerConnection/servidor desses testes é simulado.
-- Teste de resposta SDP impede reutilizar uma resposta antiga na negociação de microfone e suporta respostas legadas sem requestId.
-- Android Lint: zero erros/fatais e 16 avisos (estilo, localização de strings, compatibilidade de API e ícone). Não significa ausência absoluta de bugs.
-- Interface renderizada com componentes Android nativos em 1920×1080 e fixture de 28 jogos/10 promoções obtidos do catálogo/site Microsoft em pt-BR. Destaques reais, fileiras, grade, detalhes e configurações foram inspecionados. A fixture é só de desenvolvimento e não entra no APK.
-- `Wire.java`, `Pad.java` e `LowLatencyDecoderFactory.java` continuam iguais aos arquivos da versão 0.4; nenhuma troca de decoder por software.
-- APKs ARM32 e ARM64 verificados com apksigner; manifesto br.com.nuvemtv, versão 0.5.0, versionCode 5, nome BXbox Cloud TV.
-- Certificado local SHA-256 a1461b49275b49e7e55637318e52442f8ed7aad1b105d91cf55480cd11f584f0, o mesmo dos APKs locais 0.4/0.3 desta conversa. Uma instalação gerada no GitHub pode ter outra chave.
+- Gradle :app:testLiteUnitTest :app:lintLite :app:assembleLite: BUILD SUCCESSFUL, Java 17, SDK/build-tools 35, Gradle 8.9.
+- 70 testes Java/Robolectric: zero falhas, zero erros, zero ignorados. Incluem regressões anteriores de login/layout/foco/catálogo/compras/idioma e novos casos de pesquisa com fallback 400, não mascarar 403, codificação de gamertag, URLs de avatares, fotos na lista/perfil e orçamento de imagem 96×96.
+- SocialIntegrationTest verifica painel interno sem Intent externo, mesma instância entre telas e ao abrir o jogo, restrição de navegação/origem de captura, opção de informações de voz desligada por padrão, habilitação após permissão, atributos de áudio de mídia sem mudar volume e isolamento dos botões do controle enquanto o social está expandido. Não acessa uma conta real nem estabelece um grupo remoto.
+- Testes de transporte social validam método, URL, corpo e tratamento de falhas usando respostas simuladas. Não comprovam mensagem recebida, convite enviado ou bloqueio de uma conta real.
+- node tools/test-player.cjs: passou. SDP/ICE, controle, áudio remoto separado do vídeo e habilitado, faixas simultâneas preservadas, recvonly sem microfone, sendrecv/captura quando ativado, renegociação, voiceStats opcional sem coleta por padrão, negação de permissão e liberação das faixas inclusive em captura assíncrona pendente. PeerConnection/servidor simulados.
+- Android Lint: zero erros/fatais, 18 avisos remanescentes de estilo, localização, compatibilidade e ícone. Não significa ausência absoluta de bugs.
+- Interface nativa renderizada nos testes a 1920×1080 com fixture pública de catálogo. A fixture é somente de desenvolvimento e não entra no APK. Não houve teste de TV física.
+- Wire.java, Pad.java e LowLatencyDecoderFactory.java comparados à versão 0.5, sem alteração. Dependências de runtime preservadas. Decodificação nativa continua restrita a hardware.
+- APKs ARM32 e ARM64 compilados e verificados com apksigner. Manifesto br.com.nuvemtv, versionName 0.6.0, versionCode 6, nome BXbox Cloud TV.
+- Certificado local SHA-256 a1461b49275b49e7e55637318e52442f8ed7aad1b105d91cf55480cd11f584f0, igual aos APKs locais 0.5/0.4/0.3. Um APK gerado no GitHub pode ter outra chave.
+- Instalador verificado em diretório vazio e em atualização preservando workflow existente. Arquivos extraídos comparados com o projeto empacotado. Nenhuma chave privada incluída.
 
-## O que não foi validado ou concluído
+## O que ainda exige teste real
 
-Não houve TV física, microfone físico, conta Xbox autenticada nem interlocutor. O ajuste de chatStream corrige uma diferença concreta do protocolo, mas não permite afirmar que o usuário já será ouvido no jogo. O teste local de microfone e os contadores enviados servem para o próximo teste real.
+Não houve TV, microfone físico, conta Xbox autenticada nem interlocutor. As correções de áudio tratam diferenças concretas de configuração e reprodução, mas não comprovam som audível no seu aparelho ou voz recebida por outra pessoa. Os testes não certificam as operações sociais autenticadas, consulta de compras ou continuidade de grupo recolhido.
 
-Não foi concluído um cliente de grupos de voz Xbox nem envio de convite de grupo, nem bloqueio nativo da conta. Essas ações encaminham explicitamente ao serviço oficial e não exibem um sucesso fictício. Não há equivalência completa com o Xbox Cloud oficial.
+Grupos/convites/bloqueio usam a página original Xbox incorporada em WebView; não há novo cliente nativo de Party. As ações dependem do serviço, conta, privacidade, compatibilidade e versão do WebView. O login oficial pode ser pedido uma primeira vez separadamente. A concessão de microfone não prova conexão com um grupo. Fechar social ou colocar o app em segundo plano encerra a página/captura. WebViews podem restringir reprodução de páginas ocultas; confirme a continuidade após recolher.
 
-As chamadas sociais de texto/perfil e a consulta de compras foram implementadas, mas necessitam validação autenticada. Autorizações, conta, privacidade, controle familiar, restrição de cliente e alterações de API podem impedir operações. Uma consulta de licença recusada não vira ausência de compra; um envio recusado não vira mensagem local enviada.
+Não houve medição de RAM, latência ou FPS em aparelho de 1 GB. O caminho de vídeo foi preservado e a área social é criada somente ao abrir, mas a página oficial e a voz ativa aumentam o consumo. Resolução, codec, bitrate e baixa latência continuam sujeitos ao servidor/hardware.
 
-Sem teste de desempenho/latência em aparelho físico de 1 GB. O caminho de vídeo foi mantido, mas captura, encode e diagnóstico de voz têm custo quando ligados. Estatísticas de vídeo continuam opcionais. A escolha de idioma cobre telas principais; conteúdo do servidor/pessoas e diagnósticos técnicos pode permanecer em seu idioma original.
-
-Consulte docs/ALTERACOES_0.5.md para comportamento, limites e referências, e docs/GUIA_GITHUB.md para gerar o APK no mesmo repositório.
+Consulte ALTERACOES_0.6.md e GUIA_GITHUB.md para uso e limitações.

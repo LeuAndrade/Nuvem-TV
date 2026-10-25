@@ -32,4 +32,7 @@ public class CoverLoaderTest {
             loader.pause();assertEquals(0,loader.memoryBytes());loader.bind(image,url);assertNull(image.getDrawable());
         }finally{loader.close();}
     }
+    @Test public void avatarDecodesWithEssentialQueryAndSmallMemoryBudget()throws Exception{
+        android.content.Context context=RuntimeEnvironment.getApplication();String url=AvatarUrl.resize("https://images-eds-ssl.xboxlive.com/image?url=https%3A%2F%2Favatar-ssl.xboxlive.com%2Fp.png&w=208");File dir=new File(context.getCacheDir(),"covers-v2");dir.mkdirs();StringBuilder hash=new StringBuilder();for(byte value:MessageDigest.getInstance("SHA-256").digest(url.getBytes(StandardCharsets.UTF_8)))hash.append(String.format("%02x",value&255));Bitmap source=Bitmap.createBitmap(512,512,Bitmap.Config.ARGB_8888);source.eraseColor(0xff23b678);try(FileOutputStream out=new FileOutputStream(new File(dir,hash+".jpg"))){source.compress(Bitmap.CompressFormat.PNG,100,out);}source.recycle();CoverLoader loader=new CoverLoader(context);try{ImageView image=new ImageView(context);loader.bindAvatar(image,url);long end=System.currentTimeMillis()+3000;while(!(image.getDrawable() instanceof BitmapDrawable)&&System.currentTimeMillis()<end){Thread.sleep(20);Shadows.shadowOf(Looper.getMainLooper()).idle();}assertTrue(image.getDrawable() instanceof BitmapDrawable);Bitmap result=((BitmapDrawable)image.getDrawable()).getBitmap();assertTrue(result.getWidth()<=96);assertTrue(result.getHeight()<=96);assertTrue(loader.memoryBytes()<=96*96*4);}finally{loader.close();}
+    }
 }

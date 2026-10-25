@@ -1,12 +1,25 @@
-# O que conferir nesta atualização
+# O que conferir nesta atualização 0.6.0
 
-Esta versão corrige pontos de protocolo de voz, mas não foi testada em TV/conta autenticada. Antes de uma partida, use Configurações > Streaming > Testar microfone. Durante a partida com microfone ligado, observe os contadores do indicador Voz. Pacotes enviados não provam que outra pessoa ouviu.
+A busca usa a decoração aceita pelo endpoint de pesquisa e possui alternativa de perfil exato para respostas 400/404. As fotos aparecem na lista e no perfil. Falhas de autorização continuam sendo informadas.
 
-Meus jogos consulta compras e resgates; se a Microsoft recusar a consulta, o app informa a falha e mantém o cache. A área social tem chamadas reais de pesquisa, amigos, perfil e texto, mas grupo de voz/convite e bloqueio integrado não foram implementados: esses botões encaminham explicitamente para o Xbox oficial, que pode pedir um login próprio. Nenhum convite ou bloqueio é simulado no aplicativo.
+Áudio do jogo: ajustados foco de mídia, recebimento das faixas e reprodução separada do vídeo no WebView. Microfone: retirada a taxa fixa de captura que alguns aparelhos não aceitam. Isso foi testado localmente com simulações; não houve teste de som em TV física ou conversa autenticada.
 
-Idioma do sistema, Português, English e Español ficam em Configurações > Streaming > Idioma. Metadados mudam na próxima atualização.
+Configurações > Streaming > Ativar microfone permite o uso no jogo (é necessário um dispositivo de captura de áudio conectado/disponível). Depois, habilite **Exibir informações de voz** somente se quiser acompanhar o diagnóstico durante o streaming. Essa opção começa desligada. **Último estado da voz** e **Testar microfone** permitem consultar informações nas configurações.
 
-# Atualizar para 0.5.0 sem criar outro repositório
+## Usar amigos, grupos e voz dentro do aplicativo
+
+1. Abra Jogar com amigos e pesquise o gamertag. Clique na pessoa para ver foto, perfil e ações.
+2. Para o conjunto de opções originais, abra **Social Xbox**. Convidar para grupo e Bloquear também abrem essa área dentro do app, no perfil escolhido. Nenhum convite ou bloqueio é enviado só por apertar o botão nativo: confirme a ação nos controles oficiais.
+3. No primeiro acesso, entre com a mesma conta no painel oficial, caso ele solicite. Essa sessão é diferente do login nativo; seus cookies ficam salvos até sair da conta ou o serviço encerrar a sessão.
+4. Na interface do Xbox, use pesquisa, perfil, mensagens, amizade, seguir/bloquear e opções de grupo oferecidas à sua conta. A disponibilidade segue permissões, privacidade, região e recursos do serviço. Não há confirmação de envio inventada pelo app.
+5. Crie/entre no grupo pelos controles oficiais e permita o microfone quando solicitado pelo Android. Permissão concedida não significa que o grupo já está conectado: confira o estado e teste com a outra pessoa na página oficial.
+6. **Voltar ao aplicativo** recolhe a página, conservando a mesma instância para tentar manter o grupo ao navegar e abrir a partida. O atalho **Social Xbox** permite reabri-la. Não pressione Fechar social se pretende continuar no grupo.
+7. Se o social recebeu o microfone, a próxima partida deixa a captura do jogo desligada para evitar disputa. Para voltar à voz do jogo, feche o social e inicie novamente a partida. Se a partida já usa o microfone, encerre-a antes de transferir a captura ao grupo.
+8. **Fechar social**, sair da conta ou colocar o app em segundo plano fecha a página e encerra sua captura. Não há serviço de voz em segundo plano. O Android/WebView pode limitar áudio de página recolhida: a continuidade precisa ser confirmada no seu aparelho. Em TV com WebView antigo, atualize Android System WebView; o site pode exigir uma versão mais recente.
+
+O painel usa o serviço oficial, não uma implementação independente do protocolo de grupos. Ele não injeta credenciais ou scripts no site. A página remota custa RAM adicional quando aberta; o decoder nativo e as otimizações da biblioteca foram mantidos, mas não é possível prometer desempenho idêntico com grupo ativo em qualquer TV de 1 GB.
+
+# Atualizar para 0.6.0 sem criar outro repositório
 
 Se você já instalou o APK da entrega anterior, instale o novo APK de mesma arquitetura **por cima**, sem desinstalar. O nome continua BXbox Cloud TV, e a sessão cifrada pode ser reaproveitada quando a assinatura da atualização for compatível. A renovação ainda depende de a Microsoft aceitar sua credencial.
 
@@ -22,7 +35,7 @@ Para atualizar seu repositório já criado:
 git pull --ff-only
 python3 instalar_projeto.py --sem-workflow --substituir
 git add .
-git commit -m "Atualiza para BXbox Cloud TV 0.5.0"
+git commit -m "Atualiza para BXbox Cloud TV 0.6.0"
 git push
 ```
 
@@ -30,7 +43,7 @@ git push
 5. O workflow anterior continua compilando o projeto. Para atualizar também seu nome, edite `.github/workflows/android.yml` pelo GitHub e cole `workflow-android.txt` desta entrega.
 6. Vá a Actions e baixe os APKs da execução verde.
 
-A navegação lateral tem Início, Volte a jogar, Pesquisar, Configurações, Biblioteca, Favoritos e Ajuda. Escolha um jogo para ver Jogar/Voltar/Favoritar. A conta sai por Configurações > Sair da conta.
+Volte a jogar aparece na página inicial, acima de populares. Meus jogos reúne compras da conta; Jogar com amigos abre a área social. Escolha um jogo para ver Jogar/Voltar/Favoritar. A conta sai por Configurações > Sair da conta.
 
 ---
 
@@ -175,16 +188,13 @@ A borda verde forte indica o foco real do controle; o fundo verde discreto no me
 
 Em Configurações, Streaming reúne motor, resolução, bitrate, codec, baixa latência, estatísticas e perfil leve. Conexão reúne servidor e diagnóstico. Conta e aplicativo reúne login/saída e licenças. O Client ID permanece interno e não pode ser alterado pela interface.
 
-O destaque é estático e usa os metadados da biblioteca real; não exibe gamertag, plano, classificação etária ou popularidade inventados.
+O destaque usa promoções atuais retornadas pelo site oficial, com navegação manual e sem vídeo de fundo. Não inventa classificações ou popularidade.
 
 
-## Usar os novos recursos da 0.5
+## Recursos mantidos
 
-- As setas do destaque percorrem as promoções atuais do site oficial. Promoções de pré-venda não viram jogos de nuvem por causa do banner.
-- Volte a jogar fica acima de populares. Game Pass e jogos próprios são fileiras. Todos os jogos abre a grade no fim da página.
-- Meus jogos lista compras/resgates consultados na conta, incluindo jogos sem suporte à nuvem com essa limitação indicada. Game Pass não é contado como compra.
-- Em Jogar com amigos, pesquise o gamertag ou atualize amigos/sugestões. Confira o destinatário e o texto antes de enviar. A Microsoft pode negar ações por autorização/privacidade.
-- Grupo de voz e bloqueio ficam no Xbox oficial, por encaminhamento; não há comunicação de grupo integrada entre as pessoas nesta versão.
-- Para diagnosticar voz, anote o resultado do teste local e o indicador na partida. Se houver amostras locais, mas não houver pacotes enviados, a falha está depois da captura. Se os pacotes crescem mas ninguém ouve, confira chat do jogo, permissões e o recebimento no outro aparelho; esse resultado precisa de validação real.
+Destaques oficiais, fileiras de catálogo, Volte a jogar, compras em Meus jogos, gêneros, todos os jogos e idiomas continuam disponíveis. Native/WebView, estatísticas, resolução, bitrate, codec e servidor continuam nas configurações. Client ID segue interno. Não substitua seu repositório por um fork.
 
-Use o mesmo repositório já criado. A chave dos APKs locais 0.5 é a mesma dos APKs locais 0.4/0.3 desta conversa. Isso não garante atualização sobre um APK gerado no GitHub com outra chave. O instalador e o código completo acompanham o pacote.
+A assinatura dos APKs locais 0.6 é a mesma dos APKs locais 0.5/0.4/0.3 desta conversa. Isso não garante atualização sobre um APK do GitHub com outra chave. Use a chave do APK instalado para conservar dados.
+
+Veja VALIDACAO.md e docs/ALTERACOES_0.6.md para testes e limites.

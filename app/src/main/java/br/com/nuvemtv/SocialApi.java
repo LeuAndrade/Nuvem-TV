@@ -18,7 +18,23 @@ final class SocialApi {
     });}
     static String xuid(String value){if(value==null||!value.matches("[0-9]{1,20}"))throw new IllegalArgumentException("XUID inválido");return value;}
     static JSONArray people(JSONObject response)throws Exception{JSONArray source=response.optJSONArray("people");if(source==null)throw new Exception("Formato de pessoas não reconhecido");JSONArray out=new JSONArray();Set<String> seen=new HashSet<>();for(int i=0;i<Math.min(100,source.length());i++){JSONObject person=source.optJSONObject(i);if(person==null)continue;String id=person.optString("xuid");if(id.matches("[0-9]{1,20}")&&seen.add(id))out.put(person);}return out;}
-    JSONArray search(String query)throws Exception{String q=query.trim();if(q.length()<1||q.length()>64)throw new IllegalArgumentException("Digite um gamertag de até 64 caracteres");return people(transport.call("GET","https://peoplehub.xboxlive.com/users/me/people/search/decoration/detail,presenceDetail?q="+URLEncoder.encode(q,"UTF-8")+"&maxItems=25","3",null));}
+    static String query(String value)throws Exception{return URLEncoder.encode(value,"UTF-8").replace("+","%20");}
+    JSONArray search(String value)throws Exception{
+        String q=value.replace('\u00a0',' ').trim();if(q.isEmpty()||q.length()>64)throw new IllegalArgumentException("Digite um gamertag de até 64 caracteres");
+        Net.HttpError last=null;
+        // Search aceita detail/preferredColor; presenceDetail não faz parte desse contrato.
+        for(String decoration:new String[]{"detail,preferredColor","detail"}){
+            try{return people(transport.call("GET","https://peoplehub.xboxlive.com/users/me/people/search/decoration/"+decoration+"?q="+query(q)+"&maxItems=25","3",null));}
+            catch(Net.HttpError error){if(error.status!=400&&error.status!=404)throw error;last=error;}
+        }
+        // Alternativa exata: Profile não depende da versão do decorador do PeopleHub.
+        try{return profilePeople(transport.call("GET","https://profile.xboxlive.com/users/gt("+query(q)+")/profile/settings?settings=Gamertag,GameDisplayPicRaw","2",null));}
+        catch(Net.HttpError error){if(error.status==404)return new JSONArray();if(last!=null&&error.status==400)throw new Exception("O Xbox recusou os formatos de pesquisa desta conta. Use a área social integrada.");throw error;}
+    }
+    static JSONArray profilePeople(JSONObject response)throws Exception{
+        JSONArray source=response.optJSONArray("profileUsers");if(source==null)throw new Exception("Formato de perfil não reconhecido");JSONArray result=new JSONArray();
+        for(int i=0;i<source.length();i++){JSONObject raw=source.optJSONObject(i);if(raw==null)continue;String id=raw.optString("id");if(!id.matches("[0-9]{1,20}"))continue;JSONObject user=Json.obj("xuid",id);JSONArray settings=raw.optJSONArray("settings");JSONObject detail=new JSONObject();if(settings!=null)for(int n=0;n<settings.length();n++){JSONObject item=settings.optJSONObject(n);if(item==null)continue;switch(item.optString("id")){case "Gamertag":user.put("gamertag",item.optString("value"));break;case "GameDisplayPicRaw":user.put("displayPicRaw",item.optString("value"));break;case "Gamerscore":user.put("gamerScore",item.optString("value"));break;case "Bio":detail.put("bio",item.optString("value"));break;default:break;}}user.put("detail",detail);result.put(user);}return result;
+    }
     JSONArray friends()throws Exception{return people(transport.call("GET","https://peoplehub.xboxlive.com/users/me/people/social/decoration/detail,presenceDetail","7",null));}
     JSONArray suggestions()throws Exception{return people(transport.call("GET","https://peoplehub.xboxlive.com/users/me/people/recommendations/decoration/detail","7",null));}
     JSONObject profile(String id)throws Exception{JSONArray result=people(transport.call("GET","https://peoplehub.xboxlive.com/users/me/people/xuids("+xuid(id)+")/decoration/detail,presenceDetail","7",null));if(result.length()==0)throw new Exception("Perfil indisponível");return result.getJSONObject(0);}

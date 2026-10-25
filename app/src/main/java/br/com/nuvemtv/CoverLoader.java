@@ -44,13 +44,14 @@ final class CoverLoader {
         main.removeCallbacksAndMessages(null);
     }
     void bind(ImageView view, String url) { bind(view,url,320,180); }
+    void bindAvatar(ImageView view,String url){bind(view,AvatarUrl.resize(url),96,96);}
     void bindHero(ImageView view,String original) {
         String url=Catalog.coverUrl(original);
         if(!url.isEmpty())url=url.replace("w=320&h=180", "w=640&h=360");
         bind(view,url,640,360);
     }
     private void bind(ImageView view, String url,int width,int height) {
-        view.setImageDrawable(null);
+        view.setImageDrawable(width==height?new TvIcon("account",0xff9ab1bd,width):null);
         view.setTag(url);
         if (paused || closed || url.isEmpty() || Catalog.coverUrl(url).isEmpty()) return;
         Bitmap hit = memory.get(url);

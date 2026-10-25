@@ -177,6 +177,24 @@ final class I18n {
         put("Mensagem aceita pelo serviço Xbox","Message accepted by the Xbox service","Mensaje aceptado por el servicio Xbox");
         put("Nenhuma mensagem de texto retornada.","No text messages returned.","No se devolvieron mensajes de texto.");
         put("Não foi possível carregar as mensagens: ","Could not load messages: ","No se pudieron cargar los mensajes: ");
+        put("Exibir informações de voz","Show voice information","Mostrar información de voz");
+        put("Último estado da voz","Last voice status","Último estado de voz");
+        put("Nenhum estado de voz registrado nesta execução.","No voice status recorded in this run.","No hay estado de voz registrado en esta ejecución.");
+        put("As informações de voz são opcionais e ficam desligadas por padrão. Feche o Social Xbox para devolver o microfone do grupo ao jogo.","Voice information is optional and off by default. Close Xbox Social to return the party microphone to the game.","La información de voz es opcional y está desactivada por defecto. Cierra Social Xbox para devolver el micrófono del grupo al juego.");
+        put("Social Xbox no aplicativo","Xbox Social in the app","Social Xbox en la aplicación");
+        put("Social Xbox","Xbox Social","Social Xbox");
+        put("Voltar ao aplicativo","Return to app","Volver a la aplicación");
+        put("Voltar página","Back a page","Página anterior");
+        put("Fechar social","Close social","Cerrar social");
+        put("Social Xbox · entre na página oficial para usar grupos e recursos da conta.","Xbox Social · sign in to the official page for parties and account features.","Social Xbox · inicia sesión en la página oficial para usar grupos y funciones de cuenta.");
+        put("Use as opções do Xbox nesta página para amizade, mensagem, convite, grupo e bloqueio.","Use Xbox options on this page for friends, messages, invites, parties and blocking.","Usa las opciones de Xbox en esta página para amistad, mensajes, invitaciones, grupos y bloqueo.");
+        put("Use Social Xbox no aplicativo para grupos, convites, bloqueio e demais recursos do serviço oficial.","Use Xbox Social in the app for parties, invites, blocking and other official features.","Usa Social Xbox en la aplicación para grupos, invitaciones, bloqueo y otras funciones oficiales.");
+        put("Esta navegação não pertence ao Xbox ou à autenticação Microsoft.","This navigation is outside Xbox and Microsoft authentication.","Esta navegación no pertenece a Xbox ni a la autenticación de Microsoft.");
+        put("Abra os jogos pela biblioteca do aplicativo.","Open games from the app library.","Abre los juegos desde la biblioteca de la aplicación.");
+        put("Não foi possível carregar o Social Xbox: ","Could not load Xbox Social: ","No se pudo cargar Social Xbox: ");
+        put("A área social foi encerrada pelo sistema. Abra-a novamente.","The system closed the social area. Open it again.","El sistema cerró el área social. Ábrela de nuevo.");
+        put("Encerre a partida para transferir o microfone do jogo para o grupo.","End the game to transfer its microphone to the party.","Termina la partida para transferir su micrófono al grupo.");
+        put("Social mantido aberto para preservar o grupo. Use a busca e as ações do Xbox nesta página.","Social stays open to preserve the party. Use Xbox search and actions on this page.","Social permanece abierto para conservar el grupo. Usa la búsqueda y las acciones de Xbox en esta página.");
     }
     private static void put(String pt,String en,String es){STRINGS.put(pt,new String[]{en,es});}
     static String locale(Context context){String selected=context.getSharedPreferences("settings",0).getString("language","system");return resolve(selected,android.content.res.Resources.getSystem().getConfiguration().getLocales().get(0));}
